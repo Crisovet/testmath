@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="prefetch" href="chase.html">
 <title>The Three Crossings — 2D Tactical RPG</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
@@ -29,7 +29,7 @@ h2{font:500 20px/1.35 Cinzel,serif;color:#e6f3fc;margin:0 0 11px}#question{font-
 .answer.chosen:not(.good):not(.bad),.answer.chosen:not(.good):not(.bad):hover:not(:disabled){border-color:#8fd8ff;border-width:2px;padding:8px 9px;background:linear-gradient(90deg,#1f4a6b,#143049);color:#f2faff;font-weight:600;box-shadow:0 0 0 2px #8fd8ff55,0 0 18px #8fd8ff55,inset 4px 0 0 #8fd8ff;transform:translateX(3px)}
 .answer.chosen:not(.good):not(.bad) .key{background:#8fd8ff;border-color:#8fd8ff;color:#06203a;font-weight:700}
 .answer.chosen:not(.good):not(.bad)::after{content:'✓ Selected';margin-left:auto;padding-left:8px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8fd8ff;white-space:nowrap}
-html.mob .answer.chosen:not(.good):not(.bad){padding:5px 7px}.answer.good{border-color:#82c98a;background:#1c3221}.answer.bad{border-color:#c86e66;background:#351d1b}.answer:disabled{cursor:default}
+html.mob .answer.chosen:not(.good):not(.bad){padding:5px 7px}.answer.good{border-color:#4ade64;background:#1c3221;box-shadow:0 0 0 2px #4ade64,0 0 16px #4ade6466}.answer.bad{border-color:#ff5a4f;background:#351d1b;box-shadow:0 0 0 2px #ff5a4f,0 0 16px #ff5a4f66}.answer:disabled{cursor:default}
 .actions{display:flex;gap:8px;margin-top:12px}.btn{flex:1;padding:11px 12px;border:1px solid #7fc0e6;background:linear-gradient(#2f6f9a,#1d4566);color:#eaf7ff;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase}.btn:disabled{opacity:.4;cursor:not-allowed}.btn.secondary{background:#151f2d;border-color:#43586e;color:#c3d2de}
 .feedback{font-size:12px;line-height:1.55;color:#a5b8c8;min-height:39px;margin-top:11px}.feedback.good{color:var(--green)}.feedback.bad{color:var(--red)}
 .quest-row{display:grid;grid-template-columns:25px 1fr auto;align-items:center;gap:9px;margin:12px 0}.rune{width:25px;height:25px;display:grid;place-items:center;border:1px solid #45596d;color:#a7bacb;font-size:11px}.rune.open{background:#1b3823;border-color:#83ce8a;color:#bcf4bc;box-shadow:0 0 13px #67b86e33}.quest-row b{font:11px Cinzel;color:#dbe9f4;display:block}.quest-row small{font-size:10px;color:#8097aa;display:block;margin-top:4px}.status{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#8fa3b5}.status.open{color:#a0e4a8}
@@ -57,7 +57,7 @@ html.mob .answer.chosen:not(.good):not(.bad){padding:5px 7px}.answer.good{border
 @media(max-width:800px){.rv-grid{grid-template-columns:1fr}}
 .intro-card,.end-card{animation:rise .8s cubic-bezier(.2,.8,.2,1) both}@keyframes rise{from{opacity:0;transform:translateY(24px) scale(.97)}}
 .answer{animation:slideIn .4s both}.answer:nth-child(2){animation-delay:.06s}.answer:nth-child(3){animation-delay:.12s}.answer:nth-child(4){animation-delay:.18s}@keyframes slideIn{from{opacity:0;transform:translateX(-12px)}}
-.answer.good{animation:goodPulse .7s}@keyframes goodPulse{50%{box-shadow:0 0 22px #6fd07f66}}
+.answer.good{animation:goodPulse .7s}@keyframes goodPulse{50%{box-shadow:0 0 0 2px #4ade64,0 0 26px #4ade6499}}
 .answer.bad{animation:shakeX .45s}@keyframes shakeX{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .rune.open{animation:pop .6s}@keyframes pop{40%{transform:scale(1.35)}}
 .btn{transition:.2s}.btn:hover:not(:disabled){filter:brightness(1.2);transform:translateY(-1px)}
@@ -185,9 +185,9 @@ $('hudDate').textContent=new Date().toLocaleDateString(undefined,{month:'short',
  const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbypo-5ThjzEFYh1t-dlCp94v01kU1wpxnu1WCNKLDgxfA3KXuN8Nh7c_XdiBqhTAfyxGA/exec';
  let studentPhone='',studentClass='';
 const bank=[
-{diagram:'<svg viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A circle with points A at the top, B at the left, C at the bottom and D at the right. Lines AC and BD cross at the centre. Chords AB and CD are also drawn."><circle cx="160" cy="120" r="90" fill="#16283a" stroke="#bfe6fa" stroke-width="2"/><g stroke="#9fe0ff" stroke-width="2" fill="none"><line x1="160" y1="30" x2="160" y2="210"/><line x1="70" y1="120" x2="250" y2="120"/><line x1="160" y1="30" x2="70" y2="120"/><line x1="160" y1="210" x2="250" y2="120"/></g><polyline points="160,108 172,108 172,120" fill="none" stroke="#e6e0d0" stroke-width="1.5"/><g font-family="Inter,Arial,sans-serif" font-size="16" font-weight="700" fill="#e6e0d0" text-anchor="middle"><text x="160" y="22">A</text><text x="54" y="126">B</text><text x="160" y="232">C</text><text x="268" y="126">D</text></g></svg>',q:'In the circle, AC and BD are two lines crossing at the centre, and AB and CD are chords joining the points. Which option correctly names a pair of PARALLEL lines and a pair of PERPENDICULAR lines?',a:['AB ∥ BD and AC ⟂ CD','AC ∥ BD and AB ⟂ CD','AB ∥ CD and AC ⟂ BD','AB ∥ AC and BD ⟂ CD','AC ∥ CD and AB ⟂ BD'],c:2,why:'AB and CD are opposite sides of the figure, so AB ∥ CD. The lines AC and BD cross at a right angle at the centre, so AC ⟂ BD.'},
-{q:'5 ÷ 0 is undefined because it has:',a:['Many solutions','No solution','5 solutions','10 solutions'],c:1,why:'If 5 ÷ 0 = x, then x × 0 would have to equal 5. But anything multiplied by 0 is 0, so no number works. There is no solution, so 5 ÷ 0 is undefined.'},
-{q:'An angle X becomes complementary when it is added to itself. The complementary angle formed then becomes supplementary when it is added to itself. What is angle X?',a:['30°','40°','45°','60°','90°'],c:2,why:'X + X = 90° (complementary), so X = 45°. Then 90° + 90° = 180° (supplementary), which matches. So X = 45°.'},
+{diagram:'<svg viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Triangle ABC with A at the top, B at the bottom left and C at the bottom right. A line DE joins point D on side AB to point E on side BC."><polygon points="170,30 40,200 290,200" fill="#16283a" stroke="#9fe0ff" stroke-width="2" stroke-linejoin="round"/><line x1="98.5" y1="123.5" x2="152.5" y2="200" stroke="#f2c46d" stroke-width="2.5"/><g font-family="Inter,Arial,sans-serif" font-size="16" font-weight="700" fill="#e6e0d0" text-anchor="middle"><text x="170" y="22">A</text><text x="26" y="214">B</text><text x="304" y="214">C</text><text x="82" y="124">D</text><text x="152" y="220">E</text></g></svg>',q:'In triangle ABC, a line DE is drawn from point D on side AB to point E on side BC, as shown in the diagram. Which option correctly names the pair of PARALLEL lines and the angle between them?',a:['DE ∥ AB, angle between them 0°','DE ∥ AC, angle between them 30°','AB ∥ BC, angle between them 60°','DE ∥ AC, angle between them 0°','DE ∥ BC, angle between them 90°'],c:3,why:'In the diagram, DE runs in the same direction as side AC and never meets it, so DE ∥ AC. Parallel lines point in exactly the same direction, so the angle between them is 0°, not 30°.'},
+{q:'The sum of two adjacent angles is 200°. What must be subtracted from their sum to make the angles supplementary?',a:['10°','20°','30°','160°','180°'],c:1,why:'Supplementary angles add up to 180°. The sum is 200°, so 200° − 180° = 20° must be subtracted.'},
+{q:'A sniper is lying on the ground with his rifle. He shoots his target, who is standing on the 2nd floor of a building 1 km away. What type of angle does the bullet make with the horizontal?',a:['Right angle','Obtuse angle','Acute angle','Reflex angle'],c:2,why:'The target is 1 km away but the 2nd floor is only a few metres above the ground, so the bullet travels almost level and rises by a very small angle. That angle is between 0° and 90°, so it is acute.'},
 {q:'The party has 18 torches and uses 6. How many remain?',a:['12','13','14','24'],c:0,why:'18 − 6 = 12.'},
 {q:'Three supply bags each contain 4 apples. How many apples altogether?',a:['7','10','12','16'],c:2,why:'3 × 4 = 12.'},
 {q:'A guard has 15 arrows and receives 4 more. How many arrows now?',a:['11','19','20','60'],c:1,why:'15 + 4 = 19.'},
@@ -720,7 +720,11 @@ function endGameTired(){if(finished||chasing)return;$('lockBtn').style.display='
 function chaseClick(e){e.preventDefault();if(chasing||finished)return;chasing=true;const href=e.currentTarget.getAttribute('href');
  /* Nothing is sent to Google Sheets here. The result is handed to chase.html, which submits it after the chase is attempted. */
  try{sessionStorage.setItem('threeCrossingsResult',JSON.stringify({name:heroName,class:studentClass,phone:studentPhone,quiz:'The Three Crossings - Daily Math Trial',score:opened.filter(Boolean).length,total:3,date:dateKey}))}catch(err){}
- toast('THE CHASE BEGINS!');log('The adventurer gives chase into the dark.');setTimeout(()=>{window.location.href=href},600)}
+ toast('THE CHASE BEGINS!');log('The adventurer gives chase into the dark.');
+ /* smooth hand-off: fade the scene and music to black, then open chase.html (which fades back in) */
+ const veil=document.createElement('div');veil.style.cssText='position:fixed;inset:0;z-index:99999;background:#000;opacity:0;transition:opacity .8s ease;pointer-events:all';document.body.appendChild(veil);requestAnimationFrame(()=>requestAnimationFrame(()=>{veil.style.opacity='1'}));
+ const m=$('backgroundMusic');if(m){const v0=m.volume,t0=performance.now(),fd=()=>{const k=Math.min(1,(performance.now()-t0)/800);m.volume=Math.max(0,v0*(1-k));if(k<1)requestAnimationFrame(fd)};fd()}
+ setTimeout(()=>{window.location.href=href},850)}
 function drawParty(){drawCharacter(partyX,partyY,0,state==='walking')}
 function drawBridgeTitles(){ctx.textAlign='center';ctx.shadowColor='#000';ctx.shadowBlur=5;for(let i=0;i<3;i++){const b=bridgeDefs[i],mid=b.x+b.w/2,y=b.y-70+Math.sin(time*1.4+i)*1.5;ctx.fillStyle='#d8c7a0';ctx.font='12px Cinzel';ctx.fillText(['ICEBOUND SPAN',"KING'S CAUSEWAY",'FROSTVEIL SPAN'][i],mid,y);ctx.fillStyle=opened[i]?'#9be4a0':'#9a8a6e';ctx.font='10px Inter';ctx.fillText(opened[i]?(i?'MONSTER SLAIN · CROSSABLE':'LOG SET · CROSSABLE'):(i?'MONSTER BLOCKS THE WAY':'NO LOG · GAP OPEN'),mid,y+15)}ctx.shadowBlur=0}
 function drawFireflies(){ctx.globalCompositeOperation='lighter';for(const f of FF){const x=f.x+Math.sin(time*f.sp+f.ph)*f.rad,y=f.y+Math.cos(time*f.sp*1.3+f.ph)*f.rad*.6,a=.35+.65*Math.max(0,Math.sin(time*1.7*f.sp+f.ph*3));const g=ctx.createRadialGradient(x,y,0,x,y,9);g.addColorStop(0,`rgba(190,220,120,${a})`);g.addColorStop(1,'rgba(190,220,120,0)');ctx.fillStyle=g;ctx.fillRect(x-9,y-9,18,18)}ctx.globalCompositeOperation='source-over'}
@@ -785,6 +789,7 @@ function resolve(){
  if(selected.length===0||locked||!started||finished||state==='walking')return;
  locked=true;$('lockBtn').disabled=true;const q=questions[turn],correctIndices=Array.isArray(q.c)?q.c:[q.c],correct=selected.length===correctIndices.length&&selected.every(i=>correctIndices.includes(i));outcomes[turn]=correct;picked[turn]=[...selected];
  [...$('answers').children].forEach((el,i)=>{el.disabled=true;if(correctIndices.includes(i))el.classList.add('good');if(selected.includes(i)&&!correctIndices.includes(i))el.classList.add('bad')});
+ {const hl=[...$('answers').children];setTimeout(()=>hl.forEach(el=>el.classList.remove('good','bad','chosen')),2000)}
  if(correct){
   const bridgeIndex=opened.findIndex(v=>!v);
   if(bridgeIndex<0){finish();return}
@@ -793,7 +798,7 @@ function resolve(){
   const b=bridgeDefs[bridgeIndex],gp=gpos(bridgeIndex);burst(gp.x,gp.y-74);showDragHint(bridgeIndex);
   pendingCross=()=>{state='walking';partyTargetX=bridgeIndex===2?FINAL_X:b.x+b.w+45;partyTargetY=HERO_Y;pendingNext=true;log(`The adventurer crosses ${spanNames[bridgeIndex]}.`)};
  }else{
-  $('feedback').className='feedback bad';$('feedback').textContent=`Incorrect. ${q.why} The bridge remains broken. The adventurer stays here; the next correct answer will connect the next missing bridge.`;toast('THE GAP REMAINS');log(`Turn ${turn+1}: Incorrect — the next span remains broken.`);shake=7;setTimeout(advanceTurn,1350)
+  $('feedback').className='feedback bad';$('feedback').textContent=`Incorrect. ${q.why} The bridge remains broken. The adventurer stays here; the next correct answer will connect the next missing bridge.`;toast('THE GAP REMAINS');log(`Turn ${turn+1}: Incorrect — the next span remains broken.`);shake=7;setTimeout(advanceTurn,2000)
  }
  updateUI()
 }
