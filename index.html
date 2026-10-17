@@ -728,7 +728,7 @@ function openChase(veil){const m=$('backgroundMusic');if(m)try{m.pause()}catch(e
  const modal=$('chaseModal'),fr=$('chaseFrame');
  fr.addEventListener('load',()=>setTimeout(()=>{if(veil)veil.remove()},150),{once:true});
  fr.srcdoc=CHASE_SRC;modal.classList.add('open');document.documentElement.style.overflow='hidden';setTimeout(()=>{try{fr.focus()}catch(err){}},50)}
-function chaseClick(e){e.preventDefault();if(chasing||finished)return;chasing=true;enterFullscreen();
+function chaseClick(e){e.preventDefault();if(chasing||finished)return;chasing=true;
  /* Nothing is sent to Google Sheets here. The result is handed to chase.html, which submits it after the chase is attempted. */
  try{sessionStorage.setItem('threeCrossingsResult',JSON.stringify({name:heroName,class:studentClass,phone:studentPhone,quiz:'The Three Crossings - Daily Math Trial',score:opened.filter(Boolean).length,total:3,date:dateKey}))}catch(err){}
  toast('THE CHASE BEGINS!');log('The adventurer gives chase into the dark.');
