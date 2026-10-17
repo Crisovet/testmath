@@ -1,0 +1,1379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>The Three Crossings</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;background:#070d1a;overflow:hidden;overscroll-behavior:none;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+  #game{position:fixed;inset:0}
+  #game canvas{display:block}
+  #rotate{display:none;position:fixed;inset:0;z-index:99;background:#070d1a;color:#f4f7fb;font:600 18px "Trebuchet MS",Arial,sans-serif;text-align:center;align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:24px}
+  #rotate .ico{font-size:48px;display:inline-block;animation:tilt 1.6s ease-in-out infinite}
+  @keyframes tilt{0%,100%{transform:rotate(0)}50%{transform:rotate(-90deg)}}
+  @media (orientation:portrait) and (pointer:coarse){#rotate{display:flex}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="rotate"><div class="ico">&#128241;</div><div>Please rotate your phone to landscape</div></div>
+
+<audio id="backgroundMusic" loop preload="auto">
+  <source src="music.mp3" type="audio/mpeg">
+</audio>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"></script>
+<script>
+
+const FONT = '"Trebuchet MS", "Segoe UI", Arial, sans-serif';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypo-5ThjzEFYh1t-dlCp94v01kU1wpxnu1WCNKLDgxfA3KXuN8Nh7c_XdiBqhTAfyxGA/exec';
+
+const C = {
+    panel: 0x111e33, panelEdge: 0x2f4a6b,
+    gold: 0xf5c46b, goldHex: '#f5c46b',
+    blue: 0x5aa9ff, green: 0x2fd49a, greenHex: '#6ff0c0',
+    red: 0xff6b7a, redHex: '#ff9aa5',
+    text: '#f4f7fb', muted: '#9fb4cb'
+};
+
+const LB_DEFAULT = {
+    '7': [{ name: 'Orienta', bridges: 3 }, { name: 'Thulungsat', bridges: 3 }, { name: 'Alauddin', bridges: 2 }, { name: 'Bhoomi', bridges: 2 }, { name: 'Diya', bridges: 2 }, { name: 'Nerson ', bridges: 2 }, { name: 'Ritishma', bridges: 2 }, { name: 'Simrita', bridges: 2 }, { name: 'Suyash', bridges: 2 }, { name: 'Swrangsarth', bridges: 2 }, { name: 'Thangkiraj', bridges: 2 }, { name: 'Uraj', bridges: 2 }],
+    '8': [{ name: 'Birfung', bridges: 3 }, { name: 'Jonaid', bridges: 3 }, { name: 'Pranab', bridges: 3 }, { name: 'Sanfung islary', bridges: 3 }, { name: 'Shem', bridges: 3 }, { name: 'Abhishek sangma', bridges: 1 }]
+};
+
+const ROMAN = ['I', 'II', 'III'];
+const TRIAL_TITLES = ['The Icebound Trial', "The King's Arithmetic", 'The Frostveil Test'];
+
+// ---------------------------------------------------------------
+// QUESTION GENERATOR: exactly 3 trials, one per plank/bridge span.
+// (The HTML game also used the first three entries of its bank.)
+// ---------------------------------------------------------------
+const TRIAL_COUNT = 3;
+const BANK = [
+    {
+        diagram: true,
+        q: 'In the circle, AC and BD are two lines crossing at the centre, and AB and CD are chords joining the points. Which option correctly names a pair of PARALLEL lines and a pair of PERPENDICULAR lines?',
+        a: ['AB ∥ BD and AC ⟂ CD', 'AC ∥ BD and AB ⟂ CD', 'AB ∥ CD and AC ⟂ BD', 'AB ∥ AC and BD ⟂ CD', 'AC ∥ CD and AB ⟂ BD'],
+        c: 2,
+        why: 'AB and CD are opposite sides of the figure, so AB ∥ CD. The lines AC and BD cross at a right angle at the centre, so AC ⟂ BD.'
+    },
+    {
+        q: '5 ÷ 0 is undefined because it has:',
+        a: ['Many solutions', 'No solution', '5 solutions', '10 solutions'],
+        c: 1,
+        why: 'If 5 ÷ 0 = x, then x × 0 would have to equal 5. But anything times 0 is 0, so no number works. There is no solution.'
+    },
+    {
+        q: 'An angle X becomes complementary when it is added to itself. The complementary angle formed then becomes supplementary when it is added to itself. What is angle X?',
+        a: ['30°', '40°', '45°', '60°', '90°'],
+        c: 2,
+        why: 'X + X = 90°, so X = 45°. Then 90° + 90° = 180° (supplementary), which matches.'
+    }
+];
+const getDaily = () => BANK.slice(0, TRIAL_COUNT);
+
+/*
+ * this.phase
+ *  intro  -> sign-up form
+ *  ask    -> pick an answer, lock it
+ *  place  -> correct: drag the new plank into the gap
+ *  review -> wrong: gap stays open, "Keep going"
+ *  walk   -> hero is walking
+ *  next   -> hero arrived, "Next question" visible
+ *  done   -> results
+ */
+class Game extends Phaser.Scene {
+    constructor() {
+        super('Game');
+    }
+
+    create(data) {
+        this.questions = getDaily();
+        this.slots = this.questions.length;
+
+        this.turn = data?.turn ?? 0;
+        this.outcomes = data?.outcomes ?? Array(this.slots).fill(null);
+        this.picked = data?.picked ?? Array(this.slots).fill(-1);
+        this.placed = data?.placed ?? 0;
+        this.student = this.registry.get('student') ?? null;
+        this.phase = 'ask';
+        this.selected = -1;
+        this.submitted = false;
+
+        const w = this.scale.width;
+        const h = this.scale.height;
+        const barH = Math.max(40, h * 0.08);
+        this.L = { w, h, barH, sw: w * 0.6, px: w * 0.6, pw: w * 0.4 };
+
+        this.gears = [];
+        this.gearSpeed = 1.2;
+        this.gearCur = 1.2;
+        this.plank = null;
+        this.slotHint = null;
+        this.answerBtns = [];
+        this.diagramObj = null;
+
+        this.lb = null;
+        this.loadRankings();
+
+        this.makeTextures();
+        this.cameras.main.setBackgroundColor('#070d1a');
+        this.cameras.main.fadeIn(450, 7, 13, 26);
+
+        this.drawBackground();
+        this.drawAmbient();
+        this.drawBridge();
+        this.drawMachine();
+        this.drawPanel();
+        this.drawHeader();
+
+        if (!this.student) {
+            this.phase = 'intro';
+            this.showIntro(data?.form);
+        } else {
+            this.showQuestion(!!data?.pending);
+        }
+
+        this.scale.on('resize', this.handleResize, this);
+        this.events.once('shutdown', () => {
+            this.scale.off('resize', this.handleResize, this);
+            clearTimeout(this._rz);
+        });
+    }
+
+    update(time, delta) {
+        if (this.gears.length < 2) return;
+        this.gearCur += (this.gearSpeed - this.gearCur) * Math.min(1, delta / 200);
+        const step = (this.gearCur * delta) / 1000;
+        this.gears[0].rotation += step;
+        this.gears[1].rotation -= step * 1.35;
+    }
+
+    // ---------- HELPERS ----------
+
+    makeTextures() {
+        if (this.textures.exists('dot')) return;
+        const g = this.make.graphics({ x: 0, y: 0, add: false });
+        g.fillStyle(0xffffff, 1);
+        g.fillCircle(8, 8, 8);
+        g.generateTexture('dot', 16, 16);
+        g.clear();
+        g.fillStyle(0xffffff, 1);
+        g.fillRect(0, 0, 10, 6);
+        g.generateTexture('chip', 10, 6);
+        g.destroy();
+    }
+
+    txt(x, y, str, size, color, opts = {}) {
+        return this.add.text(x, y, str, { fontFamily: FONT, fontSize: `${size}px`, color, ...opts });
+    }
+
+    starPoints(cx, cy, outer, inner) {
+        const pts = [];
+        for (let i = 0; i < 10; i++) {
+            const r = i % 2 === 0 ? outer : inner;
+            const a = -Math.PI / 2 + (i * Math.PI) / 5;
+            pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+        }
+        return pts;
+    }
+
+    drawPlank(g, cx, cy, w, h, shade = 0) {
+        g.fillStyle(shade % 2 ? 0xa57a52 : 0x8f6644, 1);
+        g.fillRoundedRect(cx - w / 2, cy - h / 2, w, h, 3);
+        g.fillStyle(0xffffff, 0.12);
+        g.fillRoundedRect(cx - w / 2 + 2, cy - h / 2 + 1, w - 4, 3, 1);
+        g.lineStyle(1, 0x5b3f2a, 0.25);
+        g.lineBetween(cx - w * 0.32, cy + 2, cx + w * 0.08, cy + 2);
+        g.lineBetween(cx - w * 0.05, cy + 4.5, cx + w * 0.35, cy + 4.5);
+        g.lineStyle(1, 0x5b3f2a, 0.8);
+        g.strokeRoundedRect(cx - w / 2, cy - h / 2, w, h, 3);
+    }
+
+    slotPos(i) {
+        const gm = this.geo;
+        return { x: gm.bridgeX + gm.padW + i * (gm.slotW + gm.gap) + gm.slotW / 2, y: gm.bridgeY - 1, w: gm.slotW };
+    }
+
+    // Reusable touch button. Options: fill, edge, left (left-aligned), badge, size
+    makeButton(x, y, width, height, label, o = {}) {
+        const r = Math.min(14, height * 0.3);
+        const c = this.add.container(x, y).setDepth(o.depth ?? 12);
+        const g = this.add.graphics();
+        const size = o.size ?? Math.max(13, Math.min(17, width * 0.05));
+        const tx = o.left ? -width / 2 + (o.badge ? height * 1.05 : 14) : 0;
+        const t = this.add.text(tx, 0, label, {
+            fontFamily: FONT, fontSize: `${size}px`, fontStyle: 'bold', color: '#ffffff'
+        }).setOrigin(o.left ? 0 : 0.5, 0.5);
+        c.add([g, t]);
+        c.label = t;
+
+        if (o.badge) {
+            const bx = -width / 2 + height * 0.5;
+            const bg = this.add.graphics();
+            bg.fillStyle(0x0b1628, 0.7);
+            bg.fillCircle(bx, 0, height * 0.28);
+            bg.lineStyle(1, C.gold, 0.6);
+            bg.strokeCircle(bx, 0, height * 0.28);
+            const bt = this.add.text(bx, 0, o.badge, {
+                fontFamily: FONT, fontSize: `${Math.round(size * 0.8)}px`, fontStyle: 'bold', color: C.goldHex
+            }).setOrigin(0.5);
+            c.add([bg, bt]);
+        }
+
+        c.paint = (fill = o.fill ?? 0x1c3250, edge = o.edge ?? 0x4a6a8c, sw = 1.5) => {
+            g.clear();
+            g.fillStyle(0x000000, 0.4);
+            g.fillRoundedRect(-width / 2, -height / 2 + 4, width, height, r);
+            g.fillStyle(fill, 1);
+            g.fillRoundedRect(-width / 2, -height / 2, width, height, r);
+            g.fillStyle(0xffffff, 0.1);
+            g.fillRoundedRect(-width / 2 + 2, -height / 2 + 2, width - 4, height * 0.42, { tl: r - 2, tr: r - 2, bl: 2, br: 2 });
+            g.lineStyle(sw, edge, 1);
+            g.strokeRoundedRect(-width / 2, -height / 2, width, height, r);
+        };
+        c.paint();
+
+        c.setSize(width, height);
+        c.setInteractive(new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height), Phaser.Geom.Rectangle.Contains);
+        c.input.cursor = 'pointer';
+        c.setEnabled = (on) => {
+            c.input.enabled = on;
+            c.setAlpha(on ? 1 : 0.4);
+            return c;
+        };
+        c.on('pointerdown', () => {
+            this.tweens.add({ targets: c, scale: 0.96, duration: 70, yoyo: true });
+        });
+        return c;
+    }
+
+    // ---------- BACKGROUND ----------
+
+    drawBackground() {
+        const { sw: w, h } = this.L;
+        const by = h * 0.52;
+        const bg = this.add.graphics().setDepth(0);
+
+        bg.fillGradientStyle(0x0a1230, 0x0a1230, 0x2b3f6e, 0x2b3f6e, 1);
+        bg.fillRect(0, 0, w, by * 0.9);
+        bg.fillGradientStyle(0x2b3f6e, 0x2b3f6e, 0x7b6a9c, 0x7b6a9c, 1);
+        bg.fillRect(0, by * 0.6, w, by * 0.4);
+
+        // moon
+        const mx = w * 0.84, my = h * 0.2, mr = Math.max(14, Math.min(w, h) * 0.03);
+        for (let i = 6; i >= 1; i--) {
+            bg.fillStyle(0xffe9b8, 0.035 * (7 - i));
+            bg.fillCircle(mx, my, mr + i * mr * 0.55);
+        }
+        bg.fillStyle(0xfff1cf, 1);
+        bg.fillCircle(mx, my, mr);
+
+        // mountains
+        bg.fillStyle(0x34476f, 1);
+        bg.fillPoints([
+            { x: 0, y: by * 0.9 }, { x: w * 0.12, y: by * 0.5 }, { x: w * 0.27, y: by * 0.85 },
+            { x: w * 0.44, y: by * 0.55 }, { x: w * 0.63, y: by * 0.88 }, { x: w * 0.82, y: by * 0.58 },
+            { x: w, y: by * 0.85 }, { x: w, y: by * 1.1 }, { x: 0, y: by * 1.1 }
+        ], true);
+        bg.fillStyle(0xb9c8ea, 0.55);
+        [[0.12, 0.5], [0.44, 0.55], [0.82, 0.58]].forEach(([px, py]) => {
+            bg.fillTriangle(w * px, by * py, w * px - w * 0.03, by * (py + 0.1), w * px + w * 0.03, by * (py + 0.1));
+        });
+
+        bg.fillStyle(0x22385a, 1);
+        bg.fillPoints([
+            { x: 0, y: by * 0.98 }, { x: w * 0.25, y: by * 0.8 }, { x: w * 0.5, y: by * 0.97 },
+            { x: w * 0.75, y: by * 0.82 }, { x: w, y: by * 0.96 }, { x: w, y: by * 1.1 }, { x: 0, y: by * 1.1 }
+        ], true);
+
+        // river, then fade into dark ground
+        bg.fillGradientStyle(0x1a4f7a, 0x1a4f7a, 0x0b2a4a, 0x0b2a4a, 1);
+        bg.fillRect(0, by, w, h * 0.2);
+        bg.fillGradientStyle(0x0b2a4a, 0x0b2a4a, 0x070d1a, 0x070d1a, 1);
+        bg.fillRect(0, by + h * 0.2, w, h * 0.1);
+        bg.fillStyle(0x070d1a, 1);
+        bg.fillRect(0, by + h * 0.3, w, h);
+    }
+
+    drawAmbient() {
+        const { sw: w, h } = this.L;
+
+        for (let i = 0; i < 26; i++) {
+            const star = this.add.circle(Math.random() * w, Math.random() * h * 0.3, Math.random() < 0.2 ? 1.6 : 1, 0xffffff, 0.8).setDepth(1);
+            this.tweens.add({ targets: star, alpha: 0.12, duration: 900 + Math.random() * 1800, yoyo: true, repeat: -1, delay: Math.random() * 1500 });
+        }
+
+        // gentle snowfall (winter theme from the HTML version)
+        this.add.particles(0, -10, 'dot', {
+            x: { min: 0, max: w }, lifespan: 8000,
+            speedY: { min: 25, max: 55 }, speedX: { min: -15, max: 15 },
+            scale: { min: 0.08, max: 0.22 }, alpha: { min: 0.3, max: 0.8 },
+            quantity: 1, frequency: 140
+        }).setDepth(6);
+
+        for (let i = 0; i < 8; i++) {
+            const fx = Math.random() * w;
+            const fy = h * (0.45 + Math.random() * 0.2);
+            const fly = this.add.image(fx, fy, 'dot').setTint(0xcfe8ff).setScale(0.2 + Math.random() * 0.15)
+                .setAlpha(0).setDepth(6).setBlendMode('ADD');
+            this.tweens.add({
+                targets: fly, alpha: { from: 0, to: 0.9 }, x: fx + (Math.random() - 0.5) * 80, y: fy + (Math.random() - 0.5) * 40,
+                duration: 2200 + Math.random() * 2200, yoyo: true, repeat: -1, delay: Math.random() * 2500, ease: 'Sine.easeInOut'
+            });
+        }
+    }
+
+    // ---------- HEADER ----------
+
+    drawHeader() {
+        const { w, barH } = this.L;
+        const g = this.add.graphics().setDepth(20);
+        g.fillGradientStyle(0x070d1a, 0x070d1a, 0x0d1a30, 0x0d1a30, 0.97);
+        g.fillRect(0, 0, w, barH);
+        g.fillStyle(C.gold, 0.55);
+        g.fillRect(0, barH - 1, w, 1);
+
+        this.txt(w * 0.03, barH / 2, 'The Three Crossings', Math.max(15, Math.min(22, w * 0.022)), C.text, { fontStyle: 'bold' })
+            .setOrigin(0, 0.5).setDepth(21);
+
+        const pillW = Math.min(w * 0.2, 150);
+        const pillH = Math.max(28, barH * 0.64);
+        const pillX = w * 0.97 - pillW / 2;
+        const pillY = barH / 2;
+        const pill = this.add.graphics().setDepth(21);
+        pill.fillStyle(0x1b2f4d, 1);
+        pill.fillRoundedRect(pillX - pillW / 2, pillY - pillH / 2, pillW, pillH, pillH / 2);
+        pill.lineStyle(1.5, C.gold, 0.8);
+        pill.strokeRoundedRect(pillX - pillW / 2, pillY - pillH / 2, pillW, pillH, pillH / 2);
+        const coinX = pillX - pillW / 2 + pillH / 2;
+        pill.fillStyle(C.gold, 1);
+        pill.fillCircle(coinX, pillY, pillH * 0.3);
+        pill.fillStyle(0xc4903a, 1);
+        pill.fillCircle(coinX, pillY, pillH * 0.19);
+
+        this.scoreText = this.txt(pillX + pillH * 0.25, pillY, `${this.placed} / ${this.slots}`, Math.max(13, Math.min(18, w * 0.017)), C.goldHex, { fontStyle: 'bold' })
+            .setOrigin(0.5).setDepth(22);
+
+        this.nameText = this.txt(pillX - pillW / 2 - 12, pillY, this.student ? this.student.name : '', 12, C.muted)
+            .setOrigin(1, 0.5).setDepth(21);
+
+        const lbW = Math.min(w * 0.17, 150);
+        const lbH = Math.max(26, barH * 0.64);
+        this.lbHeaderBtn = this.makeButton(w * 0.5, barH / 2, lbW, lbH, '\u{1F3C6} Leaderboard', { fill: 0x1d4566, edge: 0x7fc0e6, size: 12, depth: 22 });
+        this.lbHeaderBtn.on('pointerup', () => this.showLeaderboard());
+    }
+
+    // ---------- BRIDGE ----------
+
+    drawBridge() {
+        const { sw: w, h, barH } = this.L;
+
+        const bridgeY = h * 0.52;
+        const bridgeX = w * 0.2;
+        const bridgeW = w * 0.7;
+        const n = this.slots;
+        const padW = bridgeW * 0.08;
+        const gap = Math.max(4, w * 0.008);
+        const slotW = (bridgeW - padW * 2 - gap * (n - 1)) / n;
+        this.geo = { bridgeX, bridgeY, bridgeW, padW, gap, slotW };
+
+        const padLeft = { x: bridgeX + padW / 2, y: bridgeY - 1 };
+        const padRight = { x: bridgeX + bridgeW - padW / 2, y: bridgeY - 1 };
+        this.padLeft = padLeft;
+        this.padRight = padRight;
+
+        this.txt(w / 2, barH + 22, 'Rebuild the bridge', Math.max(17, Math.min(24, w * 0.036)), C.text, { fontStyle: 'bold' })
+            .setOrigin(0.5).setDepth(10).setShadow(0, 2, '#000000', 8, false, true);
+        this.txt(w / 2, barH + 46, 'Answer the trial, then drag the plank into the gap.', Math.max(10, Math.min(13, w * 0.02)), '#c6d4e6')
+            .setOrigin(0.5).setDepth(10);
+
+        const trackW = w * 0.4;
+        const trackY = barH + 70;
+        this.trackW = trackW;
+        this.trackY = trackY;
+        const track = this.add.graphics().setDepth(10);
+        track.fillStyle(0x0b1426, 0.8);
+        track.fillRoundedRect(w / 2 - trackW / 2, trackY - 4, trackW, 8, 4);
+        this.progressBar = this.add.graphics().setDepth(11);
+        this.progressLabel = this.txt(w / 2, trackY + 16, '', 11, C.muted).setOrigin(0.5).setDepth(10);
+
+        const g = this.add.graphics().setDepth(5);
+
+        // banks
+        const bankH = h * 0.11;
+        g.fillGradientStyle(0x213349, 0x213349, 0x0d1828, 0x0d1828, 1);
+        g.fillRect(-4, bridgeY + 6, bridgeX + 6, bankH);
+        g.fillRect(bridgeX + bridgeW - 2, bridgeY + 6, w - (bridgeX + bridgeW - 2) + 4, bankH);
+        g.fillStyle(0xdbe8f5, 0.9); // snowy tops
+        g.fillRect(-4, bridgeY + 6, bridgeX + 6, 5);
+        g.fillRect(bridgeX + bridgeW - 2, bridgeY + 6, w - (bridgeX + bridgeW - 2) + 4, 5);
+
+        // pillars
+        [0.1, 0.9].forEach((t) => {
+            const px = bridgeX + bridgeW * t;
+            g.fillStyle(0x2a1f24, 1);
+            g.fillRoundedRect(px - 8, bridgeY + 6, 16, h * 0.12, 3);
+            g.fillStyle(0x3d2d30, 1);
+            g.fillRect(px - 8, bridgeY + 6, 5, h * 0.12);
+        });
+
+        // rope
+        g.lineStyle(2, 0xc9a56b, 0.9);
+        const sag = h * 0.012;
+        g.beginPath();
+        g.moveTo(bridgeX, bridgeY - 30);
+        for (let s = 1; s <= 24; s++) {
+            const t = s / 24;
+            g.lineTo(bridgeX + bridgeW * t, bridgeY - 30 + Math.sin(t * Math.PI) * sag);
+        }
+        g.strokePath();
+        g.lineStyle(1, 0xc9a56b, 0.5);
+        for (let i = 0; i <= 12; i++) {
+            const t = i / 12;
+            const hx = bridgeX + bridgeW * t;
+            g.lineBetween(hx, bridgeY - 30 + Math.sin(t * Math.PI) * sag, hx, bridgeY - 6);
+        }
+
+        g.fillStyle(0x040810, 0.5);
+        g.fillRoundedRect(bridgeX, bridgeY + 10, bridgeW, 14, 6);
+        g.fillStyle(0x3b2b2a, 1);
+        g.fillRoundedRect(bridgeX, bridgeY - 2, bridgeW, 12, 4);
+
+        this.drawPlank(g, padLeft.x, padLeft.y, padW - gap, 14, 0);
+        this.drawPlank(g, padRight.x, padRight.y, padW - gap, 14, 1);
+
+        for (let i = 0; i < n; i++) {
+            const s = this.slotPos(i);
+            g.fillStyle(0x050b16, 0.6);
+            g.fillRoundedRect(s.x - s.w / 2, s.y - 7, s.w, 14, 3);
+            g.lineStyle(1, 0x5b3f2a, 0.55);
+            g.strokeRoundedRect(s.x - s.w / 2, s.y - 7, s.w, 14, 3);
+        }
+
+        [bridgeX, bridgeX + bridgeW].forEach((px) => {
+            g.fillStyle(0x5a4030, 1);
+            g.fillRoundedRect(px - 4, bridgeY - 36, 8, 42, 2);
+            const lantern = this.add.image(px, bridgeY - 42, 'dot').setTint(0xffc866).setScale(1.7).setAlpha(0.35).setDepth(6).setBlendMode('ADD');
+            this.add.image(px, bridgeY - 42, 'dot').setTint(0xffe2a0).setScale(0.45).setDepth(7);
+            this.tweens.add({ targets: lantern, alpha: 0.18, scale: 1.45, duration: 1300, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+        });
+
+        for (let i = 0; i < this.placed; i++) this.placeStatic(i, false);
+
+        // hero
+        const startX = this.placed >= this.slots ? padRight.x : this.placed > 0 ? this.slotPos(this.placed - 1).x : padLeft.x;
+        this.player = this.add.container(startX, bridgeY - 28).setDepth(8);
+        const body = this.add.container(0, 0);
+        const pg = this.add.graphics();
+        pg.fillStyle(0x040810, 0.35);
+        pg.fillEllipse(0, 27, 30, 7);
+        pg.fillStyle(0x263449, 1);
+        pg.fillRoundedRect(-7, 10, 6, 15, 2);
+        pg.fillRoundedRect(2, 10, 6, 15, 2);
+        pg.fillStyle(0x5a3a22, 1);
+        pg.fillRoundedRect(-8, 22, 8, 4, 1);
+        pg.fillRoundedRect(2, 22, 8, 4, 1);
+        pg.fillStyle(0xe08a2e, 1);
+        pg.fillRoundedRect(-16, -3, 8, 15, 3);
+        pg.fillStyle(0x4f9bff, 1);
+        pg.fillRoundedRect(-10, -5, 20, 19, 6);
+        pg.fillStyle(0xffffff, 0.2);
+        pg.fillRoundedRect(-8, -3, 5, 14, 3);
+        pg.fillStyle(C.gold, 1);
+        pg.fillRoundedRect(-9, -7, 18, 5, 2);
+        pg.fillStyle(0xf1c7a5, 1);
+        pg.fillCircle(0, -15, 9);
+        pg.fillStyle(0x2f6fb0, 1);
+        pg.fillEllipse(0, -21, 20, 9);
+        pg.fillStyle(0xf1f6fb, 1);
+        pg.fillRect(-10, -22, 20, 3);
+        pg.fillStyle(0x1a2233, 1);
+        pg.fillCircle(3, -15, 1.4);
+        pg.fillCircle(-2, -15, 1.4);
+        body.add(pg);
+        this.player.add(body);
+        this.tweens.add({ targets: body, y: -2.5, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
+
+    placeStatic(i, animate = true) {
+        const s = this.slotPos(i);
+        const g = this.add.graphics().setDepth(6);
+        this.drawPlank(g, s.x, s.y, s.w, 14, i);
+        const glow = this.add.rectangle(s.x, s.y + 7, s.w * 0.9, 4, C.green, animate ? 0 : 0.95).setDepth(6).setBlendMode('ADD');
+        if (animate) this.tweens.add({ targets: glow, alpha: 0.95, duration: 350 });
+    }
+
+    // ---------- MATH MACHINE ----------
+
+    makeGear(x, y, r, teeth, fill) {
+        const g = this.add.graphics({ x, y });
+        const pts = [];
+        const steps = teeth * 4;
+        for (let i = 0; i < steps; i++) {
+            const a = (i / steps) * Math.PI * 2;
+            const rr = i % 4 < 2 ? r : r * 0.78;
+            pts.push({ x: Math.cos(a) * rr, y: Math.sin(a) * rr });
+        }
+        g.fillStyle(fill, 1);
+        g.fillPoints(pts, true);
+        g.lineStyle(1.5, 0x7a5a22, 1);
+        g.strokePoints(pts, true, true);
+        g.fillStyle(0x0b1628, 1);
+        g.fillCircle(0, 0, r * 0.28);
+        return g;
+    }
+
+    drawMachine() {
+        const { sw: w, h } = this.L;
+        const gm = this.geo;
+
+        const mw = Math.max(54, Math.min(w * 0.13, 118, gm.bridgeX * 0.82));
+        const mh = Math.max(100, Math.min(h * 0.2, 150));
+        const mx = gm.bridgeX / 2 - 4;
+        const by = gm.bridgeY + 8;
+        const cy = gm.bridgeY - Math.max(72, mh * 0.6) - by;
+
+        this.machineDims = { mw, mh };
+        this.chute = { x: mx + mw / 2, y: by + cy };
+
+        const m = this.add.container(mx, by).setDepth(8);
+        this.machine = m;
+        const g = this.add.graphics();
+
+        g.fillStyle(0x040810, 0.45);
+        g.fillEllipse(0, 2, mw * 1.15, 9);
+
+        const hop = [
+            { x: -mw * 0.36, y: -mh - 16 }, { x: mw * 0.36, y: -mh - 16 },
+            { x: mw * 0.2, y: -mh + 2 }, { x: -mw * 0.2, y: -mh + 2 }
+        ];
+        g.fillStyle(0x1a2b44, 1);
+        g.fillPoints(hop, true);
+        g.lineStyle(2, C.panelEdge, 1);
+        g.strokePoints(hop, true, true);
+
+        g.fillStyle(0x23364f, 1);
+        g.fillRoundedRect(-mw / 2, -mh, mw, mh, 10);
+        g.fillStyle(0xffffff, 0.06);
+        g.fillRoundedRect(-mw / 2 + 3, -mh + 3, mw - 6, mh * 0.35, { tl: 8, tr: 8, bl: 3, br: 3 });
+        g.lineStyle(2, 0x4a6a8c, 1);
+        g.strokeRoundedRect(-mw / 2, -mh, mw, mh, 10);
+
+        g.fillStyle(0x06101c, 1);
+        g.fillRoundedRect(-mw * 0.34, -mh * 0.93, mw * 0.68, mh * 0.2, 5);
+        g.lineStyle(1.5, C.green, 0.7);
+        g.strokeRoundedRect(-mw * 0.34, -mh * 0.93, mw * 0.68, mh * 0.2, 5);
+
+        g.fillStyle(0x0b1628, 1);
+        g.fillRoundedRect(-mw * 0.4, -mh * 0.69, mw * 0.8, mh * 0.43, 6);
+        g.lineStyle(1.5, 0x3a5578, 1);
+        g.strokeRoundedRect(-mw * 0.4, -mh * 0.69, mw * 0.8, mh * 0.43, 6);
+
+        g.fillStyle(0x0b1628, 1);
+        g.fillRoundedRect(mw / 2 - 6, cy - 13, 16, 26, 3);
+        g.lineStyle(2, C.gold, 0.9);
+        g.strokeRoundedRect(mw / 2 - 6, cy - 13, 16, 26, 3);
+        g.fillStyle(0x2f4a6b, 1);
+        g.fillRoundedRect(mw / 2 + 4, cy + 11, 24, 5, 2);
+
+        g.fillStyle(0x1a2b44, 1);
+        g.fillRoundedRect(-mw * 0.4, -4, mw * 0.18, 8, 2);
+        g.fillRoundedRect(mw * 0.22, -4, mw * 0.18, 8, 2);
+        m.add(g);
+
+        const gearA = this.makeGear(-mw * 0.17, -mh * 0.475, Math.min(mw * 0.2, mh * 0.17), 8, C.gold);
+        const gearB = this.makeGear(mw * 0.17, -mh * 0.4, Math.min(mw * 0.14, mh * 0.12), 6, 0xd9a05a);
+        m.add([gearA, gearB]);
+        this.gears = [gearA, gearB];
+
+        this.lamp = this.add.graphics();
+        m.add(this.lamp);
+        this.lampPos = { x: mw * 0.3, y: -mh * 0.14 };
+        this.setLamp(C.gold);
+
+        this.machineScreen = this.txt(0, -mh * 0.83, '', Math.max(11, Math.min(15, mw * 0.14)), C.greenHex, { fontStyle: 'bold' }).setOrigin(0.5);
+        m.add(this.machineScreen);
+        this.setScreen(`${this.placed}/${this.slots}`, C.greenHex);
+    }
+
+    setLamp(color) {
+        const { x, y } = this.lampPos;
+        this.lamp.clear();
+        this.lamp.fillStyle(color, 0.25);
+        this.lamp.fillCircle(x, y, 9);
+        this.lamp.fillStyle(color, 1);
+        this.lamp.fillCircle(x, y, 5);
+    }
+
+    setScreen(text, color) {
+        this.machineScreen.setText(text).setColor(color);
+    }
+
+    runMachine(success) {
+        const { mh } = this.machineDims;
+        this.tweens.add({
+            targets: this.machine, angle: { from: -1.4, to: 1.4 }, duration: 60, yoyo: true,
+            repeat: success ? 9 : 5, onComplete: () => this.machine.setAngle(0)
+        });
+
+        if (success) {
+            this.gearSpeed = 8;
+            this.setLamp(C.green);
+            this.setScreen('...', C.greenHex);
+            this.time.delayedCall(800, () => {
+                this.gearSpeed = 1.2;
+                this.setScreen('Done!', C.greenHex);
+                this.sparkle(this.chute.x + 6, this.chute.y);
+                if (this.phase === 'place') this.spawnPlank(false);
+            });
+        } else {
+            this.gearSpeed = 0.2;
+            this.setLamp(C.red);
+            this.setScreen('Error', C.redHex);
+            this.smoke(this.machine.x, this.machine.y - mh - 14);
+            this.time.delayedCall(1300, () => {
+                this.gearSpeed = 1.2;
+                this.setLamp(C.gold);
+                this.setScreen(`${this.placed}/${this.slots}`, C.greenHex);
+            });
+        }
+    }
+
+    smoke(x, y) {
+        const em = this.add.particles(x, y, 'dot', {
+            speed: { min: 10, max: 34 }, angle: { min: 250, max: 290 }, scale: { start: 0.25, end: 0.9 },
+            alpha: { start: 0.5, end: 0 }, lifespan: 950, tint: 0x8fa0b3, emitting: false
+        }).setDepth(30);
+        em.explode(12);
+        this.time.delayedCall(1300, () => em.destroy());
+    }
+
+    // ---------- DRAGGABLE PLANK (touch friendly) ----------
+
+    spawnPlank(restore = false) {
+        const pw = this.geo.slotW;
+        const ph = 14;
+        const rest = { x: this.chute.x + 14 + pw / 2, y: this.chute.y };
+
+        const plank = this.add.container(restore ? rest.x : this.chute.x - 6, rest.y).setDepth(15);
+        this.plank = plank;
+
+        const glow = this.add.rectangle(0, 0, pw + 10, ph + 10, C.green, 0.3).setBlendMode('ADD');
+        const gfx = this.add.graphics();
+        this.drawPlank(gfx, 0, 0, pw, ph, this.placed);
+        const label = this.txt(0, -28, 'Drag me into the gap', 11, C.goldHex, { fontStyle: 'bold' }).setOrigin(0.5);
+        plank.add([glow, gfx, label]);
+        plank.setSize(pw + 40, ph + 50);
+
+        this.tweens.add({ targets: glow, alpha: 0.12, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+        this.tweens.add({ targets: [gfx, label], y: '+=3', duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+        this.showSlotHint();
+
+        const enable = () => {
+            // generous hit area so a finger can grab it easily
+            plank.setInteractive({
+                hitArea: new Phaser.Geom.Rectangle(-(pw / 2 + 20), -(ph / 2 + 28), pw + 40, ph + 56),
+                hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+                draggable: true,
+                useHandCursor: true
+            });
+            plank.on('dragstart', () => {
+                plank.setDepth(40).setScale(1.1);
+                label.setVisible(false);
+            });
+            plank.on('drag', (pointer, dragX, dragY) => {
+                plank.x = dragX;
+                plank.y = dragY;
+                this.slotHint?.setFillStyle(C.green, this.isNearSlot(plank) ? 0.4 : 0.12);
+            });
+            plank.on('dragend', () => {
+                if (this.isNearSlot(plank)) {
+                    this.dropPlank(plank);
+                } else {
+                    plank.setDepth(15);
+                    this.slotHint?.setFillStyle(C.green, 0.12);
+                    this.tweens.add({ targets: plank, x: rest.x, y: rest.y, scale: 1, duration: 280, ease: 'Back.easeOut' });
+                }
+            });
+        };
+
+        if (restore) {
+            enable();
+        } else {
+            plank.setScale(0.2).setAlpha(0);
+            this.tweens.add({ targets: plank, x: rest.x, scale: 1, alpha: 1, duration: 480, ease: 'Back.easeOut', onComplete: enable });
+        }
+    }
+
+    showSlotHint() {
+        if (this.slotHint) this.slotHint.destroy();
+        const s = this.slotPos(this.placed);
+        this.slotHint = this.add.rectangle(s.x, s.y, s.w + 6, 22, C.green, 0.12).setStrokeStyle(2, C.gold, 1).setDepth(7);
+        this.tweens.add({ targets: this.slotHint, alpha: 0.45, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
+
+    isNearSlot(plank) {
+        const s = this.slotPos(this.placed);
+        return Math.abs(plank.x - s.x) < s.w * 0.75 + 24 && Math.abs(plank.y - s.y) < 64;
+    }
+
+    dropPlank(plank) {
+        const idx = this.placed;
+        const s = this.slotPos(idx);
+        this.input.setDraggable(plank, false);
+        plank.disableInteractive();
+
+        this.tweens.add({
+            targets: plank, x: s.x, y: s.y, scale: 1, duration: 150, ease: 'Quad.easeIn',
+            onComplete: () => {
+                plank.destroy();
+                this.plank = null;
+                if (this.slotHint) {
+                    this.tweens.killTweensOf(this.slotHint);
+                    this.slotHint.destroy();
+                    this.slotHint = null;
+                }
+                this.placeStatic(idx, true);
+                this.cameras.main.shake(90, 0.003);
+                this.dust(s.x, s.y + 8);
+
+                this.placed++;
+                this.phase = 'walk';
+                this.setScreen(`${this.placed}/${this.slots}`, C.greenHex);
+                this.setLamp(C.gold);
+                this.updateProgress(true);
+
+                const arrived = () => {
+                    this.phase = 'next';
+                    this.showAction(this.turn >= this.slots - 1 ? 'See results' : 'Next question');
+                };
+                this.walkTo(s.x, () => {
+                    if (this.placed >= this.slots) this.walkTo(this.padRight.x, arrived);
+                    else arrived();
+                });
+            }
+        });
+    }
+
+    dust(x, y) {
+        const em = this.add.particles(x, y, 'dot', {
+            speed: { min: 20, max: 70 }, angle: { min: 200, max: 340 }, scale: { start: 0.22, end: 0 },
+            alpha: { start: 0.5, end: 0 }, lifespan: 480, tint: 0xc9d7ea, emitting: false
+        }).setDepth(30);
+        em.explode(10);
+        this.time.delayedCall(700, () => em.destroy());
+    }
+
+    walkTo(x, onDone) {
+        const baseY = this.player.y;
+        const duration = Math.max(520, Math.abs(x - this.player.x) * 2.4);
+        const hops = Math.max(1, Math.round(duration / 320));
+        this.tweens.add({ targets: this.player, x, duration, ease: 'Sine.easeInOut', onComplete: onDone });
+        this.tweens.add({ targets: this.player, y: baseY - 12, duration: duration / (hops * 2), yoyo: true, repeat: hops - 1, ease: 'Quad.easeOut' });
+    }
+
+    // ---------- RIGHT PANEL (question, answers, buttons) ----------
+
+    drawPanel() {
+        const { w, h, barH, px, pw } = this.L;
+        const g = this.add.graphics().setDepth(9);
+        g.fillStyle(0x0d1520, 0.98);
+        g.fillRect(px, barH, pw, h - barH);
+        g.fillStyle(C.panelEdge, 1);
+        g.fillRect(px, barH, 2, h - barH);
+
+        const m = 16;
+        this.turnLabel = this.txt(px + m, barH + 12, '', 11, C.goldHex, { fontStyle: 'bold' }).setDepth(11);
+        this.questionText = this.txt(px + m, barH + 30, '', 16, C.text, {
+            fontStyle: 'bold', wordWrap: { width: pw - m * 2 }, lineSpacing: 3
+        }).setDepth(11);
+        this.feedbackText = this.txt(px + m, 0, '', 12, C.muted, { wordWrap: { width: pw - m * 2 }, lineSpacing: 2 }).setDepth(11);
+
+        // bottom action area
+        const bw = pw - m * 2;
+        const bh = Math.max(40, Math.min(48, h * 0.075));
+        this.btnY = h - bh / 2 - 14;
+        const cx = px + pw / 2;
+
+        this.lockBtn = this.makeButton(cx, this.btnY, bw, bh, 'Lock answer', { fill: 0x2f6df0, edge: 0x9cc4ff });
+        this.lockBtn.on('pointerup', () => this.askConfirm());
+
+        const yesW = (bw - 10) * 0.6, noW = (bw - 10) * 0.4;
+        this.yesBtn = this.makeButton(px + m + yesW / 2, this.btnY, yesW, bh, 'Yes, lock it', { fill: 0x0f6b4f, edge: C.green });
+        this.noBtn = this.makeButton(px + m + yesW + 10 + noW / 2, this.btnY, noW, bh, 'Change', { fill: 0x1c3250, edge: 0x4a6a8c });
+        this.yesBtn.on('pointerup', () => { this.hideConfirm(); this.resolve(); });
+        this.noBtn.on('pointerup', () => this.hideConfirm());
+
+        this.actionBtn = this.makeButton(cx, this.btnY, bw, bh, 'Next question', { fill: 0x2f6df0, edge: 0x9cc4ff });
+        this.actionBtn.on('pointerup', () => this.advance());
+
+        [this.lockBtn, this.yesBtn, this.noBtn, this.actionBtn].forEach((b) => b.setVisible(false).setEnabled(false));
+        this.panelBtnH = bh;
+    }
+
+    showAction(label) {
+        const b = this.actionBtn;
+        b.label.setText(label);
+        b.setVisible(true).setEnabled(true).setAlpha(0).setY(this.btnY + 20);
+        this.tweens.add({ targets: b, alpha: 1, y: this.btnY, duration: 320, delay: 200, ease: 'Back.easeOut' });
+    }
+
+    hideAction() {
+        this.actionBtn.setVisible(false).setEnabled(false);
+    }
+
+    askConfirm() {
+        if (this.phase !== 'ask' || this.selected < 0) return;
+        this.lockBtn.setVisible(false).setEnabled(false);
+        this.yesBtn.setVisible(true).setEnabled(true);
+        this.noBtn.setVisible(true).setEnabled(true);
+        const letter = String.fromCharCode(65 + this.selected);
+        this.setFeedback(`Lock in answer ${letter}? One answer per turn.`, C.muted);
+    }
+
+    hideConfirm() {
+        this.yesBtn.setVisible(false).setEnabled(false);
+        this.noBtn.setVisible(false).setEnabled(false);
+        if (this.phase === 'ask') {
+            this.lockBtn.setVisible(true).setEnabled(this.selected >= 0);
+            this.setFeedback(this.selected >= 0 ? 'Press Lock answer when you are ready.' : 'Tap an answer to select it.', C.muted);
+        }
+    }
+
+    setFeedback(text, color) {
+        this.feedbackText.setText(text).setColor(color);
+    }
+
+    advance() {
+        if (this.phase !== 'next' && this.phase !== 'review') return;
+        this.phase = 'busy';
+        this.actionBtn.setEnabled(false);
+        this.tweens.add({
+            targets: this.actionBtn, alpha: 0, y: this.btnY + 10, duration: 150,
+            onComplete: () => {
+                this.hideAction();
+                this.turn++;
+                this.showQuestion();
+            }
+        });
+    }
+
+    // ---------- QUESTIONS ----------
+
+    showQuestion(restorePlace = false) {
+        if (this.turn >= this.slots) {
+            this.showVictory();
+            return;
+        }
+
+        const { h, barH, px, pw } = this.L;
+        const m = 16;
+        const q = this.questions[this.turn];
+        this.phase = 'ask';
+        this.selected = -1;
+
+        this.turnLabel.setText(`TURN ${String(this.turn + 1).padStart(2, '0')} · SPAN ${ROMAN[this.turn]} · ${TRIAL_TITLES[this.turn].toUpperCase()}`);
+        const fs = q.q.length > 110 ? 13 : q.q.length > 60 ? 15 : 18;
+        this.questionText.setFontSize(`${fs}px`).setText(q.q).setAlpha(0);
+        this.tweens.add({ targets: this.questionText, alpha: 1, duration: 260 });
+
+        this.answerBtns.forEach((b) => b.destroy());
+        this.answerBtns = [];
+        this.diagramObj?.destroy();
+        this.diagramObj = null;
+        if (q.diagram) this.drawDiagram();
+
+        const n = q.a.length;
+        const top = this.questionText.y + this.questionText.height + 12;
+        const bottomLimit = this.btnY - this.panelBtnH / 2 - 8 - 62; // leave room for feedback
+        const gap = 6;
+        const ah = Math.max(30, Math.min(44, (bottomLimit - top - gap * (n - 1)) / n));
+        const bw = pw - m * 2;
+
+        q.a.forEach((answer, i) => {
+            const y = top + ah / 2 + i * (ah + gap);
+            const b = this.makeButton(px + pw / 2, y, bw, ah, answer, { left: true, badge: String.fromCharCode(65 + i), size: 14 });
+            b.on('pointerdown', () => this.selectAnswer(i));
+            b.setAlpha(0).setX(px + pw / 2 + 14);
+            this.tweens.add({ targets: b, alpha: 1, x: px + pw / 2, duration: 240, delay: 60 + i * 60, ease: 'Back.easeOut' });
+            this.answerBtns.push(b);
+        });
+
+        this.feedbackText.setY(top + n * (ah + gap) + 2);
+        this.setFeedback('Tap an answer to select it.', C.muted);
+
+        this.hideAction();
+        this.yesBtn.setVisible(false).setEnabled(false);
+        this.noBtn.setVisible(false).setEnabled(false);
+        this.lockBtn.setVisible(true).setEnabled(false);
+        this.updateProgress();
+
+        if (restorePlace) {
+            this.phase = 'place';
+            this.selected = this.picked[this.turn];
+            this.paintResult();
+            this.lockBtn.setVisible(false);
+            this.setFeedback(`Correct! ${q.why} Drag the plank into the gap.`, C.greenHex);
+            this.spawnPlank(true);
+        }
+    }
+
+    selectAnswer(i) {
+        if (this.phase !== 'ask') return;
+        this.selected = i;
+        this.answerBtns.forEach((b, j) => (j === i ? b.paint(0x1f4a6b, 0x8fd8ff, 2.5) : b.paint()));
+        this.yesBtn.setVisible(false).setEnabled(false);
+        this.noBtn.setVisible(false).setEnabled(false);
+        this.lockBtn.setVisible(true).setEnabled(true);
+        this.setFeedback('Press Lock answer when you are ready.', C.muted);
+    }
+
+    paintResult() {
+        const q = this.questions[this.turn];
+        this.answerBtns.forEach((b, i) => {
+            b.setEnabled(false).setAlpha(1);
+            b.label.setAlpha(1);
+            if (i === q.c) b.paint(0x0f6b4f, C.green, 2.5);
+            else if (i === this.selected) b.paint(0x7a1f2c, C.red, 2.5);
+            else { b.paint(0x15263d, 0x2a4260, 1); b.label.setAlpha(0.45); }
+        });
+    }
+
+    resolve() {
+        if (this.phase !== 'ask' || this.selected < 0) return;
+        const q = this.questions[this.turn];
+        const correct = this.selected === q.c;
+        this.outcomes[this.turn] = correct;
+        this.picked[this.turn] = this.selected;
+
+        this.lockBtn.setVisible(false).setEnabled(false);
+        const chosenBtn = this.answerBtns[this.selected];
+        this.paintResult();
+
+        if (correct) {
+            this.phase = 'place';
+            this.setFeedback(`Correct! ${q.why} Drag the plank into the gap.`, C.greenHex);
+            this.sparkle(chosenBtn.x, chosenBtn.y);
+            this.runMachine(true);
+        } else {
+            this.phase = 'review';
+            this.setFeedback(`Not quite. ${q.why} The gap stays open, so the next correct answer fills it.`, C.redHex);
+            this.cameras.main.shake(180, 0.004);
+            this.tweens.add({ targets: chosenBtn, x: chosenBtn.x + 6, duration: 55, yoyo: true, repeat: 3 });
+            this.runMachine(false);
+            this.showAction(this.turn >= this.slots - 1 ? 'See results' : 'Keep going');
+        }
+    }
+
+    sparkle(x, y) {
+        const em = this.add.particles(x, y, 'dot', {
+            speed: { min: 70, max: 190 }, angle: { min: 0, max: 360 }, scale: { start: 0.28, end: 0 },
+            alpha: { start: 1, end: 0 }, lifespan: 650, gravityY: 120,
+            tint: [C.gold, C.green, 0xffffff, C.blue], blendMode: 'ADD', emitting: false
+        }).setDepth(30);
+        em.explode(22);
+        this.time.delayedCall(900, () => em.destroy());
+    }
+
+    updateProgress(animate = false) {
+        const { sw: w } = this.L;
+        const progress = this.placed / this.slots;
+        const draw = (p) => {
+            this.progressBar.clear();
+            const bw = this.trackW * p;
+            if (bw < 1) return;
+            const x = w / 2 - this.trackW / 2;
+            this.progressBar.fillStyle(C.blue, 1);
+            this.progressBar.fillRoundedRect(x, this.trackY - 4, bw, 8, 4);
+            this.progressBar.fillStyle(0xffffff, 0.25);
+            this.progressBar.fillRoundedRect(x, this.trackY - 4, bw, 3, 2);
+        };
+        if (animate) {
+            this.tweens.addCounter({ from: this._shown ?? 0, to: progress, duration: 500, onUpdate: (t) => draw(t.getValue()) });
+        } else {
+            draw(progress);
+        }
+        this._shown = progress;
+        this.progressLabel.setText(`Spans joined  ${this.placed} / ${this.slots}`);
+        this.scoreText.setText(`${this.placed} / ${this.slots}`);
+    }
+
+    // Circle diagram for question 1 (drawn with graphics, no SVG needed)
+    drawDiagram() {
+        const { sw, h } = this.L;
+        const bh = Math.min(h * 0.24, 150);
+        const bw = Math.min(sw * 0.6, bh * 1.45);
+        const cx = sw / 2;
+        const cy = h - bh / 2 - 12;
+        const r = bh * 0.3;
+        const k = r / 90;
+
+        const c = this.add.container(cx, cy).setDepth(10);
+        const g = this.add.graphics();
+        g.fillStyle(0x0b121b, 0.92);
+        g.fillRoundedRect(-bw / 2, -bh / 2, bw, bh, 10);
+        g.lineStyle(1.5, 0x3a4e63, 1);
+        g.strokeRoundedRect(-bw / 2, -bh / 2, bw, bh, 10);
+        g.fillStyle(0x16283a, 1);
+        g.fillCircle(0, 4, r);
+        g.lineStyle(2, 0xbfe6fa, 1);
+        g.strokeCircle(0, 4, r);
+        g.lineStyle(2, 0x9fe0ff, 1);
+        g.lineBetween(0, 4 - r, 0, 4 + r);           // AC
+        g.lineBetween(-r, 4, r, 4);                  // BD
+        g.lineBetween(0, 4 - r, -r, 4);              // AB
+        g.lineBetween(0, 4 + r, r, 4);               // CD
+        g.lineStyle(1.5, 0xe6e0d0, 1);
+        g.beginPath();
+        g.moveTo(0, 4 - 12 * k);
+        g.lineTo(12 * k, 4 - 12 * k);
+        g.lineTo(12 * k, 4);
+        g.strokePath();
+        c.add(g);
+
+        const lab = (s, x, y) => c.add(this.txt(x, y, s, 14, '#e6e0d0', { fontStyle: 'bold' }).setOrigin(0.5));
+        lab('A', 0, 4 - r - 10);
+        lab('B', -r - 12, 4);
+        lab('C', 0, 4 + r + 10);
+        lab('D', r + 12, 4);
+        c.add(this.txt(-bw / 2 + 10, -bh / 2 + 6, 'DIAGRAM', 9, C.muted, { fontStyle: 'bold' }));
+        this.diagramObj = c;
+    }
+
+    // ---------- INTRO (sign-up, uses Phaser DOM inputs) ----------
+
+    showIntro(form = {}) {
+        const { w, h } = this.L;
+        const cw = Math.min(w * 0.5, 440);
+        const ch = Math.min(h * 0.92, 400);
+        const x0 = w / 2, y0 = (h - ch) / 2;
+
+        const ov = this.add.container(0, 0).setDepth(100);
+        const dim = this.add.rectangle(w / 2, h / 2, w, h, 0x050a14, 0.9).setInteractive();
+        const g = this.add.graphics();
+        g.fillStyle(0x0e1622, 0.98);
+        g.fillRoundedRect(x0 - cw / 2, y0, cw, ch, 18);
+        g.lineStyle(2, C.gold, 0.85);
+        g.strokeRoundedRect(x0 - cw / 2, y0, cw, ch, 18);
+        ov.add([dim, g]);
+
+        ov.add(this.txt(x0, y0 + 24, 'A JOURNEY THROUGH THE SNOW', 10, C.muted, { fontStyle: 'bold' }).setOrigin(0.5));
+        ov.add(this.txt(x0, y0 + 56, 'The Three Crossings', 28, C.text, { fontStyle: 'bold' }).setOrigin(0.5));
+        ov.add(this.txt(x0, y0 + 94, 'Solve three math trials. Every correct answer\nmakes a plank for the broken bridge.', 12, '#b5c7d6', { align: 'center' }).setOrigin(0.5));
+
+        const style = `width:${cw - 64}px;padding:10px 12px;font:15px "Trebuchet MS",Arial,sans-serif;background:#0a121c;color:#fff;border:1px solid #3f5a73;border-radius:8px;box-sizing:border-box;outline:none;`;
+        const mk = (y, placeholder, max, numeric, value) => {
+            const el = this.add.dom(x0, y, 'input', style, '').setDepth(101);
+            el.node.placeholder = placeholder;
+            el.node.maxLength = max;
+            el.node.value = value ?? '';
+            if (numeric) {
+                el.node.inputMode = 'numeric';
+                el.node.addEventListener('input', () => { el.node.value = el.node.value.replace(/\D/g, '').slice(0, max); });
+            }
+            return el;
+        };
+        const nameIn = mk(y0 + 150, 'Student name', 100, false, form.name);
+        const classIn = mk(y0 + 196, 'Class (single digit)', 1, true, form.cls);
+        const phoneIn = mk(y0 + 242, 'Phone number (10 digits, +91 added)', 10, true, form.phone);
+
+        const err = this.txt(x0, y0 + 280, '', 12, C.redHex, { fontStyle: 'bold' }).setOrigin(0.5);
+        ov.add(err);
+
+        const start = this.makeButton(x0, y0 + ch - 44, cw - 64, 44, 'Begin expedition', { fill: 0x2f6df0, edge: 0x9cc4ff, depth: 102 });
+        ov.add(start);
+        start.on('pointerup', () => {
+            const name = nameIn.node.value.trim();
+            const cls = classIn.node.value.trim();
+            const phone = phoneIn.node.value.trim();
+            if (!name) return err.setText('Please enter your name');
+            if (!/^\d$/.test(cls)) return err.setText('Class must be a single digit');
+            if (!/^\d{10}$/.test(phone)) return err.setText('Enter a 10-digit phone number');
+
+            this.student = { name, cls, phone: '+91' + phone };
+            this.registry.set('student', this.student);
+
+            // Start the background music on this tap (browsers only allow audio after a user gesture)
+            const music = document.getElementById('backgroundMusic');
+            if (music) {
+                music.volume = 0.25;
+                music.play().catch(() => {});
+            }
+            this.nameText.setText(name);
+            [nameIn, classIn, phoneIn].forEach((d) => d.destroy());
+            ov.destroy();
+            this.showQuestion();
+        });
+
+        this._introForm = () => ({ name: nameIn.node.value, cls: classIn.node.value, phone: phoneIn.node.value });
+    }
+
+    // ---------- LEADERBOARD ----------
+
+    // Pull the latest list from ranking.html when served over http; otherwise use the embedded copy
+    loadRankings() {
+        if (this.registry.get('rankingsTried')) return;
+        this.registry.set('rankingsTried', true);
+        try {
+            fetch('ranking.html', { cache: 'no-cache' })
+                .then((r) => (r.ok ? r.text() : Promise.reject()))
+                .then((t) => {
+                    const m = t.match(/const\s+classRankings\s*=\s*(\{[\s\S]*?\n\})\s*;/);
+                    if (!m) return;
+                    const d = new Function('return ' + m[1])();
+                    if (d && d['7'] && d['8']) {
+                        this.registry.set('rankings', d);
+                        this.lb?.refresh?.();
+                    }
+                })
+                .catch(() => {});
+        } catch (e) { /* offline: keep embedded copy */ }
+    }
+
+    showLeaderboard() {
+        if (this.lb) return;
+        const { w, h } = this.L;
+        const cw = Math.min(w * 0.62, 580);
+        const ch = h * 0.9;
+        const x0 = w / 2 - cw / 2, y0 = (h - ch) / 2;
+
+        const ov = this.add.container(0, 0).setDepth(200);
+        this.lb = ov;
+        let cls = '7';
+
+        const dim = this.add.rectangle(w / 2, h / 2, w, h, 0x02060e, 0.82).setInteractive();
+        const card = this.add.graphics();
+        card.fillStyle(0x0f1c32, 0.99);
+        card.fillRoundedRect(x0, y0, cw, ch, 18);
+        card.lineStyle(2, 0x6fb0d6, 0.9);
+        card.strokeRoundedRect(x0, y0, cw, ch, 18);
+        const block = this.add.rectangle(w / 2, h / 2, cw, ch, 0x000000, 0).setInteractive(); // taps on the card don't close it
+        ov.add([dim, card, block]);
+
+        ov.add(this.txt(x0 + 20, y0 + 16, 'Adventurer Rankings', 20, C.text, { fontStyle: 'bold' }));
+        ov.add(this.txt(x0 + 20, y0 + 42, 'ORDERED BY SCORE', 10, C.muted, { fontStyle: 'bold' }));
+
+        const close = () => {
+            this.lb = null;
+            ov.destroy();
+        };
+        dim.on('pointerup', close);
+
+        const xBtn = this.makeButton(x0 + cw - 34, y0 + 32, 40, 40, '\u00D7', { size: 22, depth: 201 });
+        xBtn.on('pointerup', close);
+        ov.add(xBtn);
+
+        const tabW = (cw - 40 - 10) / 2;
+        const tabs = {};
+        ['7', '8'].forEach((k, i) => {
+            const t = this.makeButton(x0 + 20 + tabW / 2 + i * (tabW + 10), y0 + 80, tabW, 38, `CLASS ${k}`, { size: 14, depth: 201 });
+            t.on('pointerup', () => { cls = k; render(); });
+            tabs[k] = t;
+            ov.add(t);
+        });
+
+        let rowObjs = [];
+        const render = () => {
+            ['7', '8'].forEach((k) => (k === cls ? tabs[k].paint(0x2f6f9a, 0x7fc0e6, 2) : tabs[k].paint(0x131d2a, 0x3a4e63, 1.5)));
+            rowObjs.forEach((o) => o.destroy());
+            rowObjs = [];
+
+            const data = this.registry.get('rankings') ?? LB_DEFAULT;
+            const rows = [...(data[cls] || [])].sort((a, b) => b.bridges - a.bridges);
+            const listTop = y0 + 110, listBottom = y0 + ch - 16;
+
+            if (!rows.length) {
+                const e = this.txt(w / 2, listTop + 40, 'No rankings have been added for this class yet.', 13, C.muted).setOrigin(0.5);
+                ov.add(e);
+                rowObjs.push(e);
+                return;
+            }
+
+            const rowH = Math.min(32, (listBottom - listTop) / rows.length);
+            const fs = Math.max(10, Math.min(14, rowH * 0.5));
+            let prev = null, rank = 0;
+            rows.forEach((r, i) => {
+                if (r.bridges !== prev) rank++;
+                prev = r.bridges;
+                const cy = listTop + rowH * i + rowH / 2;
+                const bg = this.add.rectangle(w / 2, cy, cw - 40, rowH - 3, i % 2 ? 0x0b121b : 0x13213a, 1);
+                const a = this.txt(x0 + 32, cy, `RANK ${rank}`, fs - 1, C.goldHex, { fontStyle: 'bold' }).setOrigin(0, 0.5);
+                const b = this.txt(x0 + 120, cy, r.name.trim(), fs + 1, C.text).setOrigin(0, 0.5);
+                const c = this.txt(x0 + cw - 32, cy, `${r.bridges}/3`, fs + 1, C.greenHex, { fontStyle: 'bold' }).setOrigin(1, 0.5);
+                ov.add([bg, a, b, c]);
+                rowObjs.push(bg, a, b, c);
+            });
+        };
+        ov.refresh = render;
+        render();
+    }
+
+    // ---------- RESULTS ----------
+
+    submitResult(score, total) {
+        if (this.submitted || !this.student) return;
+        this.submitted = true;
+        const s = this.student;
+        const body = new URLSearchParams({
+            name: s.name, class: s.cls, Class: s.cls, className: s.cls, studentClass: s.cls, phone: s.phone,
+            quiz: 'The Three Crossings - Daily Math Trial',
+            score: String(score), total: String(total),
+            percentage: (total ? (score / total) * 100 : 0).toFixed(1)
+        });
+        // Same hidden form + iframe method the original HTML used
+        let frame = document.getElementById('submissionFrame');
+        if (!frame) {
+            frame = document.createElement('iframe');
+            frame.name = 'submissionFrame';
+            frame.id = 'submissionFrame';
+            frame.style.display = 'none';
+            frame.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(frame);
+        }
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = APPS_SCRIPT_URL;
+        form.target = 'submissionFrame';
+        form.style.display = 'none';
+        body.forEach((value, key) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = value;
+            form.appendChild(input);
+        });
+        document.body.appendChild(form);
+        form.submit();
+        form.remove();
+    }
+
+    showVictory() {
+        const { w, h } = this.L;
+        this.phase = 'done';
+        this.hideAction();
+        this.lockBtn.setVisible(false);
+
+        const n = this.outcomes.filter(Boolean).length;
+        this.submitResult(n, this.slots);
+
+        const title = n === this.slots ? 'The road is yours' : n === 0 ? 'The ford stands firm' : 'A journey remembered';
+        const wrong = this.outcomes.map((o, i) => (o === false ? i : -1)).filter((i) => i >= 0);
+
+        const dim = this.add.rectangle(w / 2, h / 2, w, h, 0x050a14, 0.82).setDepth(60).setInteractive();
+        const cw = Math.min(w * 0.7, 600);
+        const ch = h * 0.86;
+        const x0 = w / 2 - cw / 2, y0 = (h - ch) / 2;
+
+        const g = this.add.graphics().setDepth(61);
+        for (let i = 5; i >= 1; i--) {
+            g.fillStyle(C.gold, 0.02 * (6 - i));
+            g.fillRoundedRect(x0 - i * 4, y0 - i * 4, cw + i * 8, ch + i * 8, 24 + i * 2);
+        }
+        g.fillStyle(0x0f1c32, 0.98);
+        g.fillRoundedRect(x0, y0, cw, ch, 24);
+        g.lineStyle(2, C.gold, 0.85);
+        g.strokeRoundedRect(x0, y0, cw, ch, 24);
+
+        const starR = Math.min(24, h * 0.04);
+        for (let i = 0; i < 3; i++) {
+            const sx = w / 2 + (i - 1) * starR * 2.8;
+            const sy = y0 + 14 + starR * 1.3 - (i === 1 ? starR * 0.3 : 0);
+            const on = i < n;
+            const sg = this.add.graphics().setDepth(62);
+            sg.fillStyle(on ? C.gold : 0x27395a, 1);
+            sg.fillPoints(this.starPoints(0, 0, starR, starR * 0.45), true);
+            sg.lineStyle(2, on ? 0xffe3a0 : 0x3a5073, 1);
+            sg.strokePoints(this.starPoints(0, 0, starR, starR * 0.45), true, true);
+            sg.setPosition(sx, sy).setScale(0).setAlpha(0);
+            this.tweens.add({ targets: sg, scale: 1, alpha: 1, duration: 450, delay: 300 + i * 220, ease: 'Back.easeOut' });
+        }
+
+        let y = y0 + 14 + starR * 2.8;
+        this.txt(w / 2, y, title, Math.max(22, Math.min(34, w * 0.035)), C.greenHex, { fontStyle: 'bold' })
+            .setOrigin(0.5).setDepth(62).setShadow(0, 3, '#000000', 10, false, true);
+        y += 34;
+        this.txt(w / 2, y, `${this.student.name}, you solved ${n} of ${this.slots} trials and joined ${n} plank${n === 1 ? '' : 's'}.`, 14, '#cfdbea', {
+            align: 'center', wordWrap: { width: cw - 50 }
+        }).setOrigin(0.5, 0).setDepth(62);
+        y += 34;
+
+        if (wrong.length) {
+            this.txt(w / 2, y, `REVIEW · ${wrong.length} TO REVISIT`, 10, C.muted, { fontStyle: 'bold' }).setOrigin(0.5, 0).setDepth(62);
+            y += 18;
+            const trim = (s) => (s.length > 70 ? s.slice(0, 67) + '…' : s);
+            const lines = wrong.map((i) => {
+                const q = this.questions[i];
+                return `Turn ${i + 1}: ${trim(q.q)}\nCorrect: ${String.fromCharCode(65 + q.c)}. ${q.a[q.c]}`;
+            }).join('\n\n');
+            this.txt(x0 + 24, y, lines, 12, '#b5c7d6', { wordWrap: { width: cw - 48 }, lineSpacing: 2 }).setDepth(62);
+        } else {
+            this.txt(w / 2, y + 6, 'Every problem is another plank.', 14, C.muted).setOrigin(0.5, 0).setDepth(62);
+        }
+
+        const bw2 = Math.min(cw * 0.42, 220);
+        const lbBtn = this.makeButton(w / 2 - bw2 / 2 - 6, y0 + ch - 36, bw2, 46, '\u{1F3C6} Leaderboard', { fill: 0x1d4566, edge: 0x7fc0e6, depth: 63, size: 15 });
+        lbBtn.on('pointerup', () => this.showLeaderboard());
+        const replay = this.makeButton(w / 2 + bw2 / 2 + 6, y0 + ch - 36, bw2, 46, 'Play again', { fill: 0x2f6df0, edge: 0x7fb0ff, depth: 63, size: 15 });
+        replay.on('pointerup', () => {
+            this.cameras.main.fadeOut(250, 7, 13, 26);
+            this.cameras.main.once('camerafadeoutcomplete', () => this.scene.restart({}));
+        });
+
+        const confetti = this.add.particles(0, -10, 'chip', {
+            x: { min: 0, max: w }, speedY: { min: 90, max: 220 }, speedX: { min: -50, max: 50 },
+            rotate: { min: 0, max: 360 }, scale: { min: 0.7, max: 1.5 }, lifespan: 4200, frequency: 55, quantity: 2,
+            tint: [C.gold, C.green, C.blue, C.red, 0xffffff], gravityY: 40
+        }).setDepth(70);
+        if (n > 0) this.time.delayedCall(3200, () => confetti.stop());
+        else confetti.stop();
+    }
+
+    // ---------- RESIZE (only fires with Scale.RESIZE; debounced) ----------
+
+    handleResize() {
+        if (this.phase === 'done') return;
+        clearTimeout(this._rz);
+        this._rz = setTimeout(() => {
+            if (!this.scene.isActive()) return;
+            const data = { turn: this.turn, outcomes: this.outcomes, picked: this.picked, placed: this.placed };
+
+            if (this.phase === 'intro') data.form = this._introForm?.();
+            else if (this.phase === 'place') data.pending = true;
+            else if (['walk', 'next', 'review', 'busy'].includes(this.phase)) data.turn = this.turn + 1;
+
+            this.scene.restart(data);
+        }, 200);
+    }
+}
+
+
+const config = {
+    type: Phaser.AUTO,
+    width: 1000,
+    height: 600,
+    parent: 'game',
+    backgroundColor: '#070d1a',
+    dom: { createContainer: true },
+    input: { activePointers: 2 },
+    scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+    scene: [Game]
+};
+const game = new Phaser.Game(config);
+
+// Best effort: go fullscreen + lock landscape on the first tap (phones only)
+if (matchMedia('(pointer:coarse)').matches) {
+    window.addEventListener('pointerdown', function lock() {
+        window.removeEventListener('pointerdown', lock);
+        const el = document.documentElement;
+        const p = el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : Promise.reject();
+        Promise.resolve(p)
+            .then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape'))
+            .catch(() => {});
+    });
+}
+</script>
+</body>
+</html>
