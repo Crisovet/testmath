@@ -63,6 +63,13 @@ html.mob .answer.chosen:not(.good):not(.bad){padding:5px 7px}.answer.good{border
 .btn{transition:.2s}.btn:hover:not(:disabled){filter:brightness(1.2);transform:translateY(-1px)}
 .log div{animation:slideIn .4s both}.portrait{animation:glow 3s infinite}@keyframes glow{50%{box-shadow:0 0 16px #bfe6fa55}}
 .progress span{box-shadow:0 0 10px #6fc6e888}
+#dragHint{display:none;margin:0 0 13px;padding:14px;background:#0b121b;border:1px solid #c9a14a;box-shadow:0 0 18px #c9a14a33;animation:hintPulse 1.8s ease-in-out infinite}
+#dragHint .dh-tag{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#e6c25a;margin-bottom:7px}
+#dragHint .dh-title{font:600 16px/1.35 Cinzel,serif;color:#f2e6c4;margin-bottom:8px}
+#dragHint .dh-text{font-size:13px;line-height:1.6;color:#d6e2ec}
+#dragHint .dh-arrow{display:block;margin:10px auto 0;width:100%;max-width:230px;height:auto}
+@keyframes hintPulse{50%{box-shadow:0 0 28px #c9a14a66}}
+html.mob #dragHint{padding:9px 10px;margin-bottom:8px}html.mob #dragHint .dh-title{font-size:13px;margin-bottom:5px}html.mob #dragHint .dh-text{font-size:11.5px;line-height:1.45}html.mob #dragHint .dh-arrow{display:none}
 #qDiagram:empty{display:none}#qDiagram{margin:0 0 13px;padding:8px;background:#0b121b;border:1px solid #3a4e63}#qDiagram svg{display:block;width:100%;height:auto;max-width:300px;margin:auto}
 
 /* ---- Mobile landscape mode (native landscape, or CSS-rotated when phone is held upright) ---- */
@@ -147,17 +154,18 @@ header,#sidebar,.intro-card,.end-card,.scene-label,.party-label,.portrait,.toast
 <main id="main">
 <section id="world">
 <canvas id="gameCanvas" aria-label="Side-view dark fantasy bridge adventure"></canvas>
-<div class="scene-label"><b>THE FORSAKEN ROAD</b><span>Act I · The Drowned Crossing</span></div><div class="toast" id="toast">Bridge connected</div>
+<div class="scene-label"><b>THE FORSAKEN ROAD</b><span>Quest · Save the Princess</span></div><div class="toast" id="toast">Bridge connected</div>
 <div class="world-bottom"><div class="portrait">⚔</div><div class="party-label"><b id="partyName">THE WANDERERS</b><span>Solo adventurer</span></div></div>
-<div id="intro"><div class="intro-card"><div class="sig">A descent into the dark</div><h1>The Three<br>Crossings</h1><p>The road is ruined. The first bridge has lost its log: answer correctly and the Hollow Stump will forge a new one, which you must drag onto the gap. The other two bridges still have their logs, but a monster stands on each. Answer correctly and the Sword Forge will conjure a blade. Drag it onto the monster to destroy it, then cross.</p><input id="nameInput" maxlength="100" placeholder="Student name"><input id="classInput" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="off" placeholder="Class"><div class="phone-wrap" id="phoneWrap"><span class="pfx">+91</span><input id="phoneInput" type="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel-national" placeholder="Phone number"></div><button class="btn" id="startBtn">Begin expedition</button><div class="foot">3 DAILY TRIALS · 1 MISSING LOG · 2 MONSTERS · ONE ADVENTURER</div></div></div>
+<div id="intro"><div class="intro-card"><div class="sig">A descent into the dark</div><h1>The Three<br>Crossings</h1><p>The Dark Warden has locked the princess in a cage at the far end of the ruined road. Only three broken crossings stand between you and her. The first bridge has lost its log: answer correctly and the Hollow Stump will forge a new one, which you must drag onto the gap. The other two bridges still have their logs, but a monster stands on each. Answer correctly and the Sword Forge will conjure a blade. Drag it onto the monster to destroy it, then cross. Join all three spans to <b>save the princess</b>.</p><input id="nameInput" maxlength="100" placeholder="Student name"><input id="classInput" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="off" placeholder="Class"><div class="phone-wrap" id="phoneWrap"><span class="pfx">+91</span><input id="phoneInput" type="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel-national" placeholder="Phone number"></div><button class="btn" id="startBtn">Begin expedition</button><div class="foot">3 DAILY TRIALS · 1 MISSING LOG · 2 MONSTERS · 1 PRINCESS TO SAVE</div></div></div>
 <div id="ending"><div class="end-card"><div class="sig">Expedition report</div><h2 id="endTitle">The Road Remembers</h2><p id="endText"></p><div id="review"></div><a id="leaderboardBtn" href="ranking.html" data-leaderboard>View Leaderboard</a></div></div>
 </section>
 <aside id="sidebar">
-<section class="section"><div class="eyebrow" id="turnLabel">Turn 01 · Span I</div><h2 id="questionTitle">A trial in the dark</h2><p id="question">Begin the expedition to receive today's first challenge.</p><div id="qDiagram"></div><div class="answers" id="answers"></div><div class="actions"><button class="btn" id="lockBtn" disabled>Lock answer</button><div id="confirmBox"><span class="confirm-q">Are you sure?</span><button class="btn" id="yesBtn">Yes</button><button class="btn secondary" id="noBtn">No</button></div></div><div class="feedback" id="feedback">One answer per turn. Correct answers forge a log for the next bridge.</div></section>
+<section class="section"><div class="eyebrow" id="turnLabel">Turn 01 · Span I</div><h2 id="questionTitle">A trial in the dark</h2><p id="question">Begin the expedition to receive today's first challenge.</p><div id="qDiagram"></div><div class="answers" id="answers"></div><div id="dragHint"></div><div class="actions"><button class="btn" id="lockBtn" disabled>Lock answer</button><div id="confirmBox"><span class="confirm-q">Are you sure?</span><button class="btn" id="yesBtn">Yes</button><button class="btn secondary" id="noBtn">No</button></div></div><div class="feedback" id="feedback">One answer per turn. Correct answers forge a log for the next bridge.</div></section>
 <section class="section"><div class="eyebrow">Expedition journal</div><h2>Broken spans</h2>
 <div class="quest-row"><div class="rune" id="rune0">I</div><div><b>The Icebound Span</b><small id="quest0">Log missing</small></div><div class="status" id="status0">Broken</div></div>
 <div class="quest-row"><div class="rune" id="rune1">II</div><div><b>The King's Causeway</b><small id="quest1">Monster blocks the log</small></div><div class="status" id="status1">Broken</div></div>
 <div class="quest-row"><div class="rune" id="rune2">III</div><div><b>The Frostveil Span</b><small id="quest2">Monster blocks the log</small></div><div class="status" id="status2">Broken</div></div>
+<div class="quest-row"><div class="rune" id="rune3">♛</div><div><b>The Captive Princess</b><small id="quest3">Locked in a cage at the road's end</small></div><div class="status" id="status3">Captive</div></div>
 <div class="progress"><span id="progressFill"></span></div><div class="progress-caption"><span id="progressText">0 of 3 spans connected</span><span>DAILY QUEST</span></div></section>
 <section class="section"><div class="eyebrow">Field notes</div><h2>Adventure log</h2><div class="log" id="log"><div>The adventurer waits at the edge of the broken road.</div></div></section>
 </aside>
@@ -201,8 +209,10 @@ const canvas=$('gameCanvas'),ctx=canvas.getContext('2d');
 // separated by small stone islands.  Bank | bridge I | island | bridge II | island | bridge III | bank
 const ROAD_Y=340,BRIDGE_W=220,BRIDGE_H=34;
 const bridgeDefs=[{x:180,y:ROAD_Y,w:BRIDGE_W,h:BRIDGE_H},{x:490,y:ROAD_Y,w:BRIDGE_W,h:BRIDGE_H},{x:800,y:ROAD_Y,w:BRIDGE_W,h:BRIDGE_H}];
-const HERO_START_X=110,HERO_Y=ROAD_Y+18,FINAL_X=1105;
-let W=1200,H=680,dpr=1,last=0,time=0,cameraX=0,shake=0,particles=[],bridgeAnim=[0,0,0],partyX=HERO_START_X,partyTargetX=HERO_START_X,partyY=HERO_Y,partyTargetY=HERO_Y,walkPhase=0,pendingNext=false;
+const HERO_START_X=110,HERO_Y=ROAD_Y+18,FINAL_X=1085,PRIN_X=1195;
+let rescueT=0,rescued=false,stolen=false,resultSent=false,chasing=false;
+const amb={on:false,done:false,t:0},MON_X0=1236,MON_FY=HERO_Y+2;
+let W=1280,H=680,dpr=1,last=0,time=0,cameraX=0,shake=0,particles=[],bridgeAnim=[0,0,0],partyX=HERO_START_X,partyTargetX=HERO_START_X,partyY=HERO_Y,partyTargetY=HERO_Y,walkPhase=0,pendingNext=false;
 function resize(){const w=$('world'),r={width:w.clientWidth,height:w.clientHeight};dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.floor(r.width*dpr);canvas.height=Math.floor(r.height*dpr);canvas.style.height=r.height+'px';draw()}
 window.addEventListener('resize',resize);
 function rnd(a,b){return a+Math.random()*(b-a)}
@@ -210,7 +220,7 @@ function roundRect(x,y,w,h,r,fill,stroke){ctx.beginPath();ctx.roundRect(x,y,w,h,
 function polygon(points,fill,stroke){ctx.beginPath();ctx.moveTo(...points[0]);for(let i=1;i<points.length;i++)ctx.lineTo(...points[i]);ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.stroke()}}
 function gradient(x1,y1,x2,y2,stops){let g=ctx.createLinearGradient(x1,y1,x2,y2);stops.forEach(s=>g.addColorStop(s[0],s[1]));return g}
 let PAT={},FF=[],SNOW=[],landed=[false,false,false],bridgeVel=[0,0,0],stepSide=false,dtG=.016,VY0=-200,VY1=900;
-const TEX={};const logFly=[0,0,0],genFlash=[0,0,0],lp=[{x:0,y:0},{x:0,y:0},{x:0,y:0}],ls=[.2,.2,.2],drag={i:-1,held:false,over:false,x:0,y:0,dx:0,dy:0},view={s:1,oy:0};let pendingCross=null;const monT=[1,-1,-1],strikeT=[0,0,0],sr=[0,0,0],sp=[{x:0,y:0},{x:0,y:0},{x:0,y:0}];
+const TEX={};const logFly=[0,0,0],genFlash=[0,0,0],lp=[{x:0,y:0},{x:0,y:0},{x:0,y:0}],ls=[.2,.2,.2],drag={i:-1,held:false,over:false,x:0,y:0,dx:0,dy:0},view={s:1,oy:0};let pendingCross=null;const monT=[1,-1,-1,-1],strikeT=[0,0,0],sr=[0,0,0],sp=[{x:0,y:0},{x:0,y:0},{x:0,y:0}];
 function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function wrapDraw(w,h,x,y,f){for(const dx of[-w,0,w])for(const dy of[-h,0,h])f(x+dx,y+dy)}
 function mkTex(w,h,seed,fn){const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),mulberry(seed),w,h);return c}
@@ -374,9 +384,9 @@ function drawForge(i,gx,gy){const on=started&&!finished&&opened.findIndex(v=>!v)
  if(on&&Math.random()<.08)spawn({x:gx+rnd(-8,8),y:gy-90,vx:rnd(-.3,.3),vy:rnd(-1.2,-.5),g:-.005,drag:.98,life:40,maxLife:40,r:rnd(1,2),color:'#ff7a3c',add:true})}
 function drawGenerator(i,gx,gy){if(i)drawForge(i,gx,gy);else drawStump(i,gx,gy)}
 function drawMonster(i,x,fy){
- const t=monT[i],big=i===2,sc=big?1:.82,H=125*sc,dead=t>=0,k=dead?Math.max(0,(t-.4)/.6):0,near=drag.held&&drag.i===i&&drag.over;
+ const t=monT[i],big=i>=2,sc=i===3?1.15:big?1:.82,H=125*sc,dead=t>=0,k=dead?Math.max(0,(t-.4)/.6):0,near=drag.held&&drag.i===i&&drag.over;
  const shk=(dead&&t<.45?Math.sin(t*90)*4*(1-t/.45):0)+(near?Math.sin(time*45)*1.6:0),br=Math.sin(time*2.2+i*1.7),sw=Math.sin(time*1.4+i),bl=!dead&&((time+i*1.3)%4)>3.88,fl=.85+.15*Math.sin(time*13+i)+.05*Math.sin(time*31);
- const C=big?{b:'#7a2c26',dk:'#2c0b0a',lt:'#c0674f',bel:'#94604a',sh:'#4b4b56',shHi:'#9a9aa8',h:'#1f1916',hHi:'#6a5648',cl:'#d9cdae',e:'#ff3b1f',au:'255,70,40',dr:'#a01414',scar:'#d49a88',glow:'255,110,40'}
+ const C=i===3?{b:'#4a2f6e',dk:'#150a24',lt:'#8a62b8',bel:'#6a4a8a',sh:'#3a3a52',shHi:'#9a8ac0',h:'#1a1424',hHi:'#6a5a88',cl:'#d9cdae',e:'#c04aff',au:'170,70,255',dr:'#7a2ab0',scar:'#b49ad0',glow:'180,110,255'}:big?{b:'#7a2c26',dk:'#2c0b0a',lt:'#c0674f',bel:'#94604a',sh:'#4b4b56',shHi:'#9a9aa8',h:'#1f1916',hHi:'#6a5648',cl:'#d9cdae',e:'#ff3b1f',au:'255,70,40',dr:'#a01414',scar:'#d49a88',glow:'255,110,40'}
   :{b:'#69774f',dk:'#222c1d',lt:'#a4b27c',bel:'#b4ad8a',sh:'#6d5a3a',shHi:'#b09a6a',h:'#b8aa80',hHi:'#e6dcb8',cl:'#cfc29a',e:'#e0a22a',au:'120,170,90',dr:'#8fb060',scar:'#d8d0b0',glow:'160,220,120'};
  const OL='#0a0608',BONE='#d6caa6',GOLD='#c9a14a';
  const mx=(a,b,f)=>{const q=h=>[1,3,5].map(n=>parseInt(h.slice(n,n+2),16)),A=q(a),B=q(b);return'#'+A.map((v,n)=>Math.round(v+(B[n]-v)*f).toString(16).padStart(2,'0')).join('')};
@@ -618,11 +628,104 @@ function drawCharacter(x,y,idx,walking){
  const fk=.8+.2*Math.sin(time*11)+.08*Math.sin(time*27);ctx.fillStyle='#1a1512';ctx.fillRect(lx-4.5,ly-5,9,2);ctx.fillRect(lx-4.5,ly+6,9,2);ctx.fillStyle=`rgba(255,${170+fk*40|0},70,.95)`;ctx.fillRect(lx-3.2,ly-3,6.4,9);
  ctx.globalCompositeOperation='lighter';const R=95*fk,lg=ctx.createRadialGradient(lx,ly,0,lx,ly,R);lg.addColorStop(0,'rgba(255,170,80,.42)');lg.addColorStop(1,'rgba(255,120,40,0)');ctx.fillStyle=lg;ctx.fillRect(lx-R,ly-R,R*2,R*2);ctx.globalCompositeOperation='source-over';
  ctx.restore()}
+
+/* ---------- The captive princess ---------- */
+function drawCage(front){
+ const a=rescued?Math.max(0,1-Math.min(1,rescueT)*2.4):1;if(a<=0)return;
+ const cx=PRIN_X,gy=HERO_Y+4,top=HERO_Y-132,L=cx-34,R=cx+34;
+ ctx.save();ctx.globalAlpha=a;ctx.lineCap='round';ctx.lineJoin='round';
+ if(!front){
+  ctx.fillStyle='#14110f';ctx.fillRect(L-7,gy-2,R-L+14,10);ctx.fillStyle='#3a322a';ctx.fillRect(L-7,gy-2,R-L+14,2.5);
+  ctx.strokeStyle='#17120f';ctx.lineWidth=2;for(let i=0;i<=6;i++){const x=L+i*(R-L)/6;ctx.beginPath();ctx.moveTo(x,gy-2);ctx.lineTo(x,top+22);ctx.stroke()}
+ }else{
+  const bar=()=>{for(let i=0;i<=6;i++){const x=L+i*(R-L)/6;ctx.beginPath();ctx.moveTo(x,gy-2);ctx.lineTo(x,top+22);ctx.quadraticCurveTo(x+(cx-x)*.15,top+4,cx+(x-cx)*.12,top-6);ctx.stroke()}};
+  ctx.strokeStyle='#0c0907';ctx.lineWidth=5;bar();ctx.strokeStyle='#4a4038';ctx.lineWidth=3;bar();ctx.strokeStyle='rgba(200,185,160,.5)';ctx.lineWidth=.9;ctx.save();ctx.translate(-.9,0);bar();ctx.restore();
+  for(const ry of[top+22,gy-30,gy-2]){ctx.strokeStyle='#0c0907';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(L-2,ry);ctx.lineTo(R+2,ry);ctx.stroke();ctx.strokeStyle='#5a5046';ctx.lineWidth=3.4;ctx.stroke()}
+  ctx.strokeStyle='#0c0907';ctx.lineWidth=5;ctx.beginPath();ctx.arc(cx,top-10,5,0,6.283);ctx.stroke();ctx.strokeStyle='#8a7a58';ctx.lineWidth=2.4;ctx.stroke();
+  /* glowing padlock */
+  const lx=cx,ly=gy-38+(rescued?Math.min(1,rescueT)*40:0),pulse=.55+.45*Math.sin(time*3.2);
+  ctx.strokeStyle='#8a7a58';ctx.lineWidth=2.4;ctx.beginPath();ctx.arc(lx,ly-6,5,Math.PI,0);ctx.stroke();
+  ctx.fillStyle='#c9a14a';ctx.beginPath();ctx.roundRect(lx-7,ly-5,14,12,2);ctx.fill();ctx.strokeStyle='#2a1c08';ctx.lineWidth=1;ctx.stroke();
+  ctx.fillStyle='#2a0c08';ctx.beginPath();ctx.arc(lx,ly,1.8,0,6.283);ctx.fill();ctx.fillRect(lx-.8,ly,1.6,4);
+  if(!rescued){ctx.globalCompositeOperation='lighter';const g=ctx.createRadialGradient(lx,ly,0,lx,ly,22);g.addColorStop(0,`rgba(255,70,50,${.45*pulse})`);g.addColorStop(1,'rgba(255,70,50,0)');ctx.fillStyle=g;ctx.fillRect(lx-22,ly-22,44,44)}
+ }
+ ctx.restore()}
+function drawPrincess(){
+ if(amb.done)return;
+ const k=rescued?Math.min(1,rescueT):0,st=rescued?Math.max(0,Math.min(1,(k-.35)/.55)):0,e=st*st*(3-2*st),P=amb.on?ambPose():null,px=P?P.px:PRIN_X-42*e,py=P?P.py:HERO_Y,t=time;
+ /* soft beacon so she can be seen from across the dark river */
+ ctx.globalCompositeOperation='lighter';{const R=170+10*Math.sin(t*2),cy=py-62,g=ctx.createRadialGradient((P?px:PRIN_X-20*e),cy,0,(P?px:PRIN_X-20*e),cy,R);g.addColorStop(0,rescued?'rgba(255,190,225,.5)':'rgba(200,165,255,.45)');g.addColorStop(1,'rgba(190,150,255,0)');ctx.fillStyle=g;ctx.fillRect((P?px:PRIN_X-20*e)-R,cy-R,R*2,R*2)}ctx.globalCompositeOperation='source-over';
+ drawCage(false);
+ ctx.save();ctx.translate(px,py);ctx.rotate(P?P.rot:0);ctx.scale(1.3,1.3*(P?Math.max(.02,1-P.fade):1));ctx.lineCap='round';ctx.lineJoin='round';
+ const hair=Math.sin(t*2.2)*2.2,hem=Math.sin(t*2)*1.2,bob=Math.sin(t*1.8)*.8,OL='#150c14',sh=-45-bob,hy=-55-bob;
+ ctx.fillStyle='rgba(0,0,0,.5)';ctx.beginPath();ctx.ellipse(0,3,18,5,0,0,6.283);ctx.fill();
+ /* long golden hair behind */
+ ctx.fillStyle=gradient(0,-62,0,-12,[[0,'#e6b958'],[1,'#a06c26']]);ctx.beginPath();ctx.moveTo(-8,hy);ctx.quadraticCurveTo(-16-hair,-38,-12-hair*1.6,-15);ctx.quadraticCurveTo(0,-9,12+hair*1.6,-15);ctx.quadraticCurveTo(16+hair,-38,8,hy);ctx.closePath();ctx.fill();ctx.strokeStyle=OL;ctx.lineWidth=1;ctx.stroke();
+ /* gown */
+ ctx.beginPath();ctx.moveTo(-6,-31-bob);ctx.quadraticCurveTo(-9,-15,-20,-2);for(let i=0;i<=4;i++)ctx.lineTo(-20+i*10,-1+(i%2)*2.6+hem*.3);ctx.quadraticCurveTo(9,-15,6,-31-bob);ctx.closePath();
+ ctx.fillStyle=gradient(-20,0,20,0,[[0,'#7b5fb0'],[.5,'#e2d3f7'],[1,'#6c5099']]);ctx.fill();ctx.strokeStyle=OL;ctx.stroke();
+ ctx.strokeStyle='#c9a85f';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(-16,-6);ctx.quadraticCurveTo(0,-2,16,-6);ctx.stroke();
+ ctx.strokeStyle='rgba(60,30,100,.35)';ctx.lineWidth=1;for(const f of[-8,0,8]){ctx.beginPath();ctx.moveTo(f*.4,-26);ctx.quadraticCurveTo(f*1.2,-14,f*1.7,-4);ctx.stroke()}
+ /* bodice + belt */
+ ctx.fillStyle='#f0e6fb';ctx.beginPath();ctx.moveTo(-6.5,-47-bob);ctx.lineTo(6.5,-47-bob);ctx.lineTo(5.5,-30-bob);ctx.lineTo(-5.5,-30-bob);ctx.closePath();ctx.fill();ctx.strokeStyle=OL;ctx.lineWidth=1;ctx.stroke();
+ ctx.fillStyle='#c9a85f';ctx.fillRect(-6,-32-bob,12,3);ctx.fillStyle='#d9304a';ctx.beginPath();ctx.arc(0,-30.5-bob,1.5,0,6.283);ctx.fill();
+ /* arms: gripping the bars, then waving once freed */
+ const wave=Math.sin(t*8)*4,lt=P?{x:-15,y:-64-bob+Math.sin(t*15)*5}:{x:-16,y:-40-bob+Math.sin(t*5)*.6},rt=P?{x:15,y:-64-bob+Math.cos(t*13)*5}:{x:16-3*e,y:-40-bob+(-20+wave)*e};
+ for(const [sg,tg] of[[-1,lt],[1,rt]]){const A=ik(sg*5.5,sh+1,tg.x,tg.y,10,10,sg);ctx.strokeStyle=OL;ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(sg*5.5,sh+1);ctx.lineTo(A.kx,A.ky);ctx.lineTo(A.tx,A.ty);ctx.stroke();ctx.strokeStyle='#e2d3f7';ctx.lineWidth=4.2;ctx.stroke();ctx.fillStyle='#f1c9a5';ctx.beginPath();ctx.arc(A.tx,A.ty,2.7,0,6.283);ctx.fill();ctx.strokeStyle=OL;ctx.lineWidth=.8;ctx.stroke()}
+ /* head */
+ ctx.fillStyle='#f1c9a5';ctx.fillRect(-2,-50-bob,4,5);
+ ctx.beginPath();ctx.arc(0,hy,7.2,0,6.283);ctx.fill();ctx.strokeStyle=OL;ctx.lineWidth=1;ctx.stroke();
+ ctx.fillStyle='#d9a94c';ctx.beginPath();ctx.arc(0,hy,7.7,Math.PI*1.02,Math.PI*1.98);ctx.lineTo(3,hy-3);ctx.quadraticCurveTo(-1,hy-6,-7.4,hy-1.2);ctx.closePath();ctx.fill();
+ const blink=(t%4)>3.88;ctx.fillStyle='#2a1a14';if(blink){ctx.fillRect(-3.6,hy+1.2,2,.8);ctx.fillRect(1.7,hy+1.2,2,.8)}else{ctx.fillRect(-3.4,hy,1.6,2.4);ctx.fillRect(1.9,hy,1.6,2.4)}
+ ctx.fillStyle='rgba(255,110,140,.4)';ctx.beginPath();ctx.arc(-4.4,hy+3.4,1.8,0,6.283);ctx.arc(4.4,hy+3.4,1.8,0,6.283);ctx.fill();
+ ctx.strokeStyle='#8a2a3a';ctx.lineWidth=1;ctx.beginPath();if(P)ctx.ellipse(0,hy+4.4,1.6,2.2,0,0,6.283);else if(rescued)ctx.arc(0,hy+3.4,2.5,.15,Math.PI-.15);else ctx.arc(0,hy+5.6,2.2,Math.PI+.25,-.25);ctx.stroke();
+ if(!rescued){const ty=((t*14)%16);ctx.fillStyle='rgba(170,215,255,.85)';ctx.beginPath();ctx.ellipse(-4.3,hy+4+ty*.4,.9,1.4,0,0,6.283);ctx.fill()}
+ /* crown */
+ ctx.fillStyle='#e6c25a';ctx.beginPath();ctx.moveTo(-6,hy-6);ctx.lineTo(-6.5,hy-12.5);ctx.lineTo(-3,hy-9);ctx.lineTo(0,hy-14.5);ctx.lineTo(3,hy-9);ctx.lineTo(6.5,hy-12.5);ctx.lineTo(6,hy-6);ctx.closePath();ctx.fill();ctx.strokeStyle=OL;ctx.lineWidth=.9;ctx.stroke();
+ ctx.fillStyle='#d9304a';ctx.beginPath();ctx.arc(0,hy-8,1.3,0,6.283);ctx.fill();
+ ctx.restore();
+ drawCage(true)}
+function drawPrincessTitle(){if(amb.on)return;const n=opened.filter(Boolean).length,y=HERO_Y-172+Math.sin(time*1.4)*1.5;ctx.textAlign='center';ctx.shadowColor='#000';ctx.shadowBlur=5;
+ ctx.fillStyle=rescued?'#ffc4de':'#e8d6f5';ctx.font='12px Cinzel';ctx.fillText(rescued?'PRINCESS RESCUED':'CAPTIVE PRINCESS',PRIN_X-(rescued?30:0),y);
+ ctx.fillStyle=rescued?'#9be4a0':'#9a8a6e';ctx.font='10px Inter';ctx.fillText(rescued?'SAFE AT LAST':(3-n)+(3-n===1?' SPAN':' SPANS')+' LEFT TO CROSS',PRIN_X-(rescued?30:0),y+15);ctx.shadowBlur=0}
+function startRescue(){rescued=true;rescueT=0;shake=9;toast('PRINCESS FREED!');log('The cage shatters. The princess is free!');
+ for(let i=0;i<90;i++){const a=Math.random()*6.283,v=rnd(.8,4.2);spawn({x:PRIN_X,y:HERO_Y-50,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1.6,g:.05,drag:.985,life:rnd(36,70),maxLife:70,r:rnd(1,3.2),color:['#ffe9a0','#ffffff','#ffb8d8'][i%3],add:true})}
+ updateUI();setTimeout(startAmbush,3400)}
+/* ---------- The Shadow Warden steals the princess ---------- */
+function ambPose(){const t=amb.t,rise=Math.min(1,t/.9),sy=Math.max(.02,rise*rise*(3-2*rise)),w=Math.max(0,t-2.7),mx=MON_X0+60*w+40*w*w,
+  fade=w>2?Math.min(1,(w-2)/.4):0,g=Math.max(0,Math.min(1,(t-1.7)/.8)),ge=g*g*(3-2*g),bob=w>0?Math.abs(Math.sin(w*9))*5:0,
+  p0x=PRIN_X-42,p0y=HERO_Y,tx=mx-52,ty=HERO_Y-70-bob,lift=g>0&&g<1?-Math.sin(g*Math.PI)*14:0;
+ return{mx,my:MON_FY-bob,sy:sy*(1-fade),px:p0x+(tx-p0x)*ge,py:p0y+(ty-p0y)*ge+lift,rot:-.4*ge+Math.sin(t*9)*.07*ge,ge,fade,w}}
+function drawAmbush(){if(!amb.on||amb.done)return;const P=ambPose();
+ if(amb.t<1.4){const a=amb.t/1.4,r=30+a*130;ctx.save();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=`rgba(170,80,255,${.6*(1-a)})`;ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(MON_X0,HERO_Y+4,r,r*.28,0,0,6.283);ctx.stroke();ctx.restore()}
+ ctx.save();ctx.translate(P.mx,P.my);ctx.scale(1,P.sy);ctx.translate(-P.mx,-P.my);drawMonster(3,P.mx,P.my);ctx.restore();
+ if(P.ge>0&&P.fade<1){ctx.save();ctx.globalCompositeOperation='lighter';ctx.lineCap='round';const x0=P.mx-58,y0=P.my-52,x1=P.px,y1=P.py-40;
+  for(let q=0;q<3;q++){ctx.strokeStyle=`rgba(190,110,255,${.55*P.ge*(1-P.fade)})`;ctx.lineWidth=2.4-q*.6;ctx.beginPath();ctx.moveTo(x0,y0);ctx.bezierCurveTo(x0-20,y0+Math.sin(time*7+q)*16,x1+20,y1+Math.cos(time*6+q)*14,x1,y1);ctx.stroke()}ctx.restore()}
+ if(P.sy>.9&&P.fade===0){ctx.save();ctx.textAlign='center';ctx.shadowColor='#000';ctx.shadowBlur=5;ctx.fillStyle='#d6b4ff';ctx.font='12px Cinzel';ctx.fillText('THE SHADOW WARDEN',P.mx,P.my-208);ctx.restore()}}
+function startAmbush(){if(amb.on)return;amb.on=true;amb.t=0;shake=12;toast('THE SHADOW WARDEN!');log('A shadow tears open. The Shadow Warden rises and seizes the princess!');
+ for(let i=0;i<90;i++){const a=Math.random()*6.283,v=rnd(.6,3.4);spawn({x:MON_X0+rnd(-30,30),y:HERO_Y-rnd(0,30),vx:Math.cos(a)*v,vy:Math.sin(a)*v-1.4,g:-.01,drag:.985,life:rnd(36,70),maxLife:70,r:rnd(1.5,4),color:['#7a3cc0','#c08aff','#2a1440'][i%3],add:i%3===1,alpha:.8})}
+ updateUI()}
+function endAmbush(){const P=ambPose();amb.done=true;stolen=true;shake=6;
+ for(let i=0;i<70;i++){const a=Math.random()*6.283,v=rnd(.6,3);spawn({x:P.mx,y:HERO_Y-60,vx:Math.cos(a)*v,vy:Math.sin(a)*v-.8,g:-.008,drag:.985,life:rnd(30,60),maxLife:60,r:rnd(1.5,4),color:['#7a3cc0','#c08aff','#2a1440'][i%3],add:i%3===1,alpha:.8})}
+ log('The Shadow Warden vanishes into the dark with the princess.');toast('THE PRINCESS IS TAKEN');showChoice()}
+function showChoice(){
+ $('turnLabel').textContent='Epilogue · The Shadow Warden';$('questionTitle').textContent='What will you do?';
+ $('question').textContent=`The Shadow Warden has dragged the princess into the dark. His trail leads away from the road. ${heroName}, will you rest, or chase after her?`;
+ $('qDiagram').innerHTML='';const host=$('answers');host.innerHTML='';
+ const tired=document.createElement('button');tired.className='answer';tired.innerHTML='<span class="key">☾</span><span>I am tired today. End the game</span>';tired.addEventListener('click',endGameTired);
+ const chase=document.createElement('a');chase.className='answer';chase.href='chase.html';chase.style.textDecoration='none';chase.innerHTML='<span class="key">⚔</span><span>Chase after the princess!</span>';chase.addEventListener('click',chaseClick);
+ host.append(tired,chase);hideConfirm();$('lockBtn').style.display='none';$('lockBtn').disabled=true;
+ $('feedback').className='feedback';$('feedback').textContent='All three trials are complete. Choose how this night ends.';updateUI()}
+function endGameTired(){if(finished||chasing)return;$('lockBtn').style.display='';finish();setTimeout(()=>{const b=$('leaderboardBtn');if(b)b.click()},500)}
+function chaseClick(e){e.preventDefault();if(chasing||finished)return;chasing=true;const href=e.currentTarget.getAttribute('href');
+ /* Nothing is sent to Google Sheets here. The result is handed to chase.html, which submits it after the chase is attempted. */
+ try{sessionStorage.setItem('threeCrossingsResult',JSON.stringify({name:heroName,class:studentClass,phone:studentPhone,quiz:'The Three Crossings - Daily Math Trial',score:opened.filter(Boolean).length,total:3,date:dateKey}))}catch(err){}
+ toast('THE CHASE BEGINS!');log('The adventurer gives chase into the dark.');setTimeout(()=>{window.location.href=href},600)}
 function drawParty(){drawCharacter(partyX,partyY,0,state==='walking')}
 function drawBridgeTitles(){ctx.textAlign='center';ctx.shadowColor='#000';ctx.shadowBlur=5;for(let i=0;i<3;i++){const b=bridgeDefs[i],mid=b.x+b.w/2,y=b.y-70+Math.sin(time*1.4+i)*1.5;ctx.fillStyle='#d8c7a0';ctx.font='12px Cinzel';ctx.fillText(['ICEBOUND SPAN',"KING'S CAUSEWAY",'FROSTVEIL SPAN'][i],mid,y);ctx.fillStyle=opened[i]?'#9be4a0':'#9a8a6e';ctx.font='10px Inter';ctx.fillText(opened[i]?(i?'MONSTER SLAIN · CROSSABLE':'LOG SET · CROSSABLE'):(i?'MONSTER BLOCKS THE WAY':'NO LOG · GAP OPEN'),mid,y+15)}ctx.shadowBlur=0}
 function drawFireflies(){ctx.globalCompositeOperation='lighter';for(const f of FF){const x=f.x+Math.sin(time*f.sp+f.ph)*f.rad,y=f.y+Math.cos(time*f.sp*1.3+f.ph)*f.rad*.6,a=.35+.65*Math.max(0,Math.sin(time*1.7*f.sp+f.ph*3));const g=ctx.createRadialGradient(x,y,0,x,y,9);g.addColorStop(0,`rgba(190,220,120,${a})`);g.addColorStop(1,'rgba(190,220,120,0)');ctx.fillStyle=g;ctx.fillRect(x-9,y-9,18,18)}ctx.globalCompositeOperation='source-over'}
 function drawSnow(cw,ch){ctx.fillStyle='#cdb89a';for(const s of SNOW){const yy=((s.y+time*s.sp)%1)*ch,xx=(((s.x+time*.012*s.w)%1)*cw+Math.sin(time*s.w+s.ph)*18*dpr+cw)%cw;ctx.globalAlpha=s.a;ctx.beginPath();ctx.arc(xx,yy,s.r*dpr,0,6.283);ctx.fill()}ctx.globalAlpha=1}
-function drawParticles(){particles=particles.filter(p=>p.life>0);for(const p of particles){p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.vx*=p.drag;p.life--;const a=Math.max(0,p.life/p.maxLife);ctx.globalCompositeOperation=p.add?'lighter':'source-over';ctx.globalAlpha=a*p.alpha;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(.1,p.r*(p.shrink?(p.add?a:1.3-a*.3):1)),0,6.283);ctx.fill()}ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over'}
+function drawParticles(){particles=particles.filter(p=>p.life>0);for(const p of particles){p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.vx*=p.drag;p.life--;const a=Math.max(0,p.life/p.maxLife);ctx.globalCompositeOperation=p.add?'lighter':'source-over';ctx.globalAlpha=a*p.alpha;ctx.fillStyle=p.color;if(p.heart){const q=Math.max(.1,p.r*(.4+a*.6));ctx.beginPath();ctx.moveTo(p.x,p.y+q*.9);ctx.bezierCurveTo(p.x-q*2,p.y-q*.4,p.x-q*.9,p.y-q*1.8,p.x,p.y-q*.6);ctx.bezierCurveTo(p.x+q*.9,p.y-q*1.8,p.x+q*2,p.y-q*.4,p.x,p.y+q*.9);ctx.fill()}else{ctx.beginPath();ctx.arc(p.x,p.y,Math.max(.1,p.r*(p.shrink?(p.add?a:1.3-a*.3):1)),0,6.283);ctx.fill()}}ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over'}
 function draw(){
  if(!ctx)return;const cw=canvas.width,ch=canvas.height;ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#0a1018';ctx.fillRect(0,0,cw,ch);
  const scale=Math.min(cw/W,ch/H),viewW=cw/scale,viewH=ch/scale;
@@ -635,7 +738,7 @@ function draw(){
  for(let k=0;k<3;k++){const x=((time*(9+k*6)+k*430)%(cw+900))-450,y=ch*(.22+.28*k),R=ch*.65,g=ctx.createRadialGradient(x,y,0,x,y,R);g.addColorStop(0,'rgba(150,135,110,.08)');g.addColorStop(1,'rgba(150,135,110,0)');ctx.fillStyle=g;ctx.fillRect(0,0,cw,ch)}
  ctx.fillStyle='rgba(40,18,8,.28)';ctx.fillRect(0,0,cw,ch);drawSnow(cw,ch);
  const hx=(partyX-cameraX)*scale,hy=(partyY-40+offY)*scale,v=ctx.createRadialGradient(hx,hy,Math.min(cw,ch)*.12,hx,hy,Math.max(cw,ch)*.8);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(.5,'rgba(4,2,2,.42)');v.addColorStop(1,'rgba(2,1,1,.9)');ctx.fillStyle=v;ctx.fillRect(0,0,cw,ch);
- ctx.setTransform(scale,0,0,scale,-cameraX*scale,offY*scale);for(let i=1;i<3;i++)if(monT[i]<1){const m=monPos(i);drawMonster(i,m.x,m.y)}drawLogItems();drawParticles();ctx.setTransform(1,0,0,1,0,0);
+ ctx.setTransform(scale,0,0,scale,-cameraX*scale,offY*scale);drawPrincessTitle();drawAmbush();drawPrincess();for(let i=1;i<3;i++)if(monT[i]<1){const m=monPos(i);drawMonster(i,m.x,m.y)}drawLogItems();drawParticles();ctx.setTransform(1,0,0,1,0,0);
 }
 function frame(now){const dt=Math.min((now-last)/1000||0,.04);last=now;dtG=dt;time+=dt;walkPhase+=dt*10;
  for(let i=0;i<3;i++){genFlash[i]=Math.max(0,genFlash[i]-dt*.9);if(logFly[i]>0&&!opened[i]){const hm=homePos(i),g=gpos(i),held=drag.held&&drag.i===i;
@@ -648,7 +751,11 @@ for(let i=1;i<3;i++){const b=bridgeDefs[i],mx=b.x+b.w/2,fy=b.y+b.h/2-12,H=i===2?
   if(t<.45&&Math.random()<.8)spawn({x:mx+rnd(-20,20),y:fy-H*rnd(.2,.9),vx:rnd(-2,2),vy:rnd(-3,1),g:.15,drag:.98,life:rnd(24,44),maxLife:44,r:rnd(1.5,3),color:'#7a0f0f'});
   if(t>.4){const k=(t-.4)/.6,cy2=fy-H*(1-k);for(let q=0;q<2;q++){const soul=Math.random()<.3;spawn({x:mx+rnd(-34,34),y:cy2+rnd(-4,4),vx:rnd(-.5,.5),vy:rnd(-1.6,-.4),g:-.01,drag:.97,life:rnd(30,55),maxLife:55,r:rnd(1.5,3.5),color:soul?'#9fd890':'#8a8478',add:soul,alpha:.8})}}}}
 for(let i=0;i<3;i++){bridgeVel[i]+=(((opened[i]?1:0)-bridgeAnim[i])*16-bridgeVel[i]*5.5)*dt;bridgeAnim[i]+=bridgeVel[i]*dt;if(i===0&&opened[i]&&!landed[i]&&bridgeAnim[i]>=1){landed[i]=true;shake=7;const b=bridgeDefs[i];dust(b.x+b.w/2,b.y+8,18);splash(b.x+40,b.y+b.h+6,14);splash(b.x+b.w-40,b.y+b.h+6,14)}if(!opened[i])landed[i]=false}
- if(state==='walking'){const st=Math.sin(walkPhase)>0;if(st!==stepSide){stepSide=st;dust(partyX-6,partyY+3,2)}partyX+=(partyTargetX-partyX)*Math.min(1,dt*1.5);partyY+=(partyTargetY-partyY)*Math.min(1,dt*1.5);if(Math.abs(partyTargetX-partyX)<3&&Math.abs(partyTargetY-partyY)<3){partyX=partyTargetX;partyY=partyTargetY;state='idle';if(pendingNext){pendingNext=false;advanceTurn()}}}
+ if(state==='walking'){const st=Math.sin(walkPhase)>0;if(st!==stepSide){stepSide=st;dust(partyX-6,partyY+3,2)}partyX+=(partyTargetX-partyX)*Math.min(1,dt*1.5);partyY+=(partyTargetY-partyY)*Math.min(1,dt*1.5);if(Math.abs(partyTargetX-partyX)<3&&Math.abs(partyTargetY-partyY)<3){partyX=partyTargetX;partyY=partyTargetY;state='idle';if(pendingNext){pendingNext=false;if(partyTargetX===FINAL_X)startRescue();else advanceTurn()}}}
+ if(rescued){rescueT+=dt/2.4;if(!amb.on&&Math.random()<.28)spawn({heart:true,x:PRIN_X-40+rnd(-34,34),y:HERO_Y-70+rnd(-12,12),vx:rnd(-.3,.3),vy:rnd(-1.3,-.6),g:-.004,drag:.99,life:rnd(50,80),maxLife:80,r:rnd(2.5,4.5),color:'#ff7aa8',alpha:.95})}
+ if(amb.on&&!amb.done){amb.t+=dt;const P=ambPose();
+  if(P.w>0&&Math.random()<.6)spawn({x:P.mx-rnd(0,50),y:P.my-rnd(0,50),vx:rnd(-.6,0),vy:rnd(-.8,-.1),g:-.004,drag:.97,life:rnd(26,50),maxLife:50,r:rnd(2,5),color:Math.random()<.5?'#7a3cc0':'#2a1440',alpha:.7,add:Math.random()<.4});
+  if(amb.t>=5.2)endAmbush()}
  draw();requestAnimationFrame(frame)}
 function log(msg){const e=document.createElement('div');e.textContent=msg;$('log').prepend(e)}
 function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').classList.remove('show'),1800)}
@@ -656,9 +763,18 @@ function updateUI(){
  $('hudName').textContent=heroName;$('partyName').textContent=heroName.toUpperCase();$('hudTurn').textContent=finished?'DONE':`${String(turn+1).padStart(2,'0')} / 03`;$('hudBridges').textContent=`${String(opened.filter(Boolean).length).padStart(2,'0')} / 03`;
  $('progressFill').style.width=(opened.filter(Boolean).length/3*100)+'%';$('progressText').textContent=`${opened.filter(Boolean).length} of 3 spans connected`;
  for(let i=0;i<3;i++){$('rune'+i).classList.toggle('open',opened[i]);$('rune'+i).textContent=opened[i]?'✓':roman[i];$('quest'+i).textContent=opened[i]?(i?'Monster slain · Adventurer crossed':'Log set · Adventurer crossed'):outcomes[i]===false?(i?'Trial failed · Monster remains':'Trial failed · Gap remains'):(i?'Monster blocks the log':'Log missing');$('status'+i).textContent=opened[i]?'Joined':'Broken';$('status'+i).classList.toggle('open',opened[i])}
+ const rs=rescued&&!stolen;$('rune3').classList.toggle('open',rs);$('rune3').textContent=rs?'♥':'♛';$('quest3').textContent=stolen?'Carried off by the Shadow Warden':rescued?'Rescued · The road is safe':'Locked in a cage at the road\u2019s end';$('status3').textContent=stolen?'Taken':rescued?'Saved':'Captive';$('status3').classList.toggle('open',rs)
 }
+function showDragHint(i){
+  const sword=i>0,box=$('dragHint');
+  const art=sword
+   ?'<svg class="dh-arrow" viewBox="0 0 230 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g transform="translate(34 30) rotate(90)"><path d="M0-22 L4-14 L4 12 L-4 12 L-4-14 Z" fill="#cfd2dc" stroke="#14141a"/><rect x="-11" y="12" width="22" height="4" fill="#c9a14a"/><rect x="-2" y="16" width="4" height="10" fill="#5a3a22"/></g><path d="M62 30 H168" stroke="#e6c25a" stroke-width="3" stroke-dasharray="7 6" fill="none"><animate attributeName="stroke-dashoffset" from="0" to="-26" dur="1s" repeatCount="indefinite"/></path><path d="M168 20 L186 30 L168 40 Z" fill="#e6c25a"/><circle cx="206" cy="30" r="15" fill="none" stroke="#e05a4a" stroke-width="2.5" stroke-dasharray="5 4"/><circle cx="206" cy="30" r="5" fill="#e05a4a"/></svg>'
+   :'<svg class="dh-arrow" viewBox="0 0 230 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="12" y="20" width="50" height="20" rx="8" fill="#6d5236" stroke="#120b06" stroke-width="2"/><ellipse cx="14" cy="30" rx="4" ry="9" fill="#a88a58"/><path d="M72 30 H150" stroke="#e6c25a" stroke-width="3" stroke-dasharray="7 6" fill="none"><animate attributeName="stroke-dashoffset" from="0" to="-26" dur="1s" repeatCount="indefinite"/></path><path d="M150 20 L168 30 L150 40 Z" fill="#e6c25a"/><rect x="178" y="16" width="44" height="28" fill="none" stroke="#e6c25a" stroke-width="2.5" stroke-dasharray="5 4"/></svg>';
+  box.innerHTML=`<div class="dh-tag">Correct · Your move</div><div class="dh-title">${sword?'Drag the sword onto the monster':'Drag the log onto the gap'}</div><div class="dh-text">${sword?`The Sword Forge has conjured a blade. Press and hold the glowing sword in the scene, drag it onto the monster guarding ${spanNames[i]}, then release to strike it down.`:`The Hollow Stump has forged a log. Press and hold the glowing log in the scene, drag it onto the broken gap of ${spanNames[i]}, then release to set it in place.`}</div>${art}`;
+  $('qDiagram').style.display='none';$('question').style.display='none';$('answers').style.display='none';box.style.display='block'}
+function hideDragHint(){const box=$('dragHint');if(!box)return;box.style.display='none';box.innerHTML='';$('qDiagram').style.display='';$('question').style.display='';$('answers').style.display=''}
 function renderQuestion(){
-  if(turn>=3){finish();return}selected=[];locked=false;
+  if(turn>=3){finish();return}hideDragHint();selected=[];locked=false;
   const q=questions[turn],multi=Array.isArray(q.c);
   $('qDiagram').innerHTML=q.diagram||'';
   $('turnLabel').textContent=`Turn ${String(turn+1).padStart(2,'0')} · Span ${roman[turn]}`;$('questionTitle').textContent=['The Icebound Trial',"The King's Arithmetic",'The Frostveil Test'][turn];$('question').textContent=q.q;
@@ -674,7 +790,7 @@ function resolve(){
   if(bridgeIndex<0){finish();return}
   logFly[bridgeIndex]=.001;genFlash[bridgeIndex]=1;state='bridge';$('feedback').className='feedback good';$('feedback').textContent=`Correct! ${q.why} ${bridgeIndex?'The Sword Forge conjures a blade! Drag it onto the monster to slay it.':'The Hollow Stump forges a log! Drag it onto the gap to build the bridge.'}`;toast(bridgeIndex?'A SWORD IS FORGED':'A LOG IS FORGED');log(`Turn ${turn+1}: Correct — a log is forged for ${spanNames[bridgeIndex]} — ${bridgeIndex?'drag the sword onto the monster.':'drag the log onto the gap.'}`);
   // Every correct answer connects the next missing bridge in the row, left to right.
-  const b=bridgeDefs[bridgeIndex],gp=gpos(bridgeIndex);burst(gp.x,gp.y-74);
+  const b=bridgeDefs[bridgeIndex],gp=gpos(bridgeIndex);burst(gp.x,gp.y-74);showDragHint(bridgeIndex);
   pendingCross=()=>{state='walking';partyTargetX=bridgeIndex===2?FINAL_X:b.x+b.w+45;partyTargetY=HERO_Y;pendingNext=true;log(`The adventurer crosses ${spanNames[bridgeIndex]}.`)};
  }else{
   $('feedback').className='feedback bad';$('feedback').textContent=`Incorrect. ${q.why} The bridge remains broken. The adventurer stays here; the next correct answer will connect the next missing bridge.`;toast('THE GAP REMAINS');log(`Turn ${turn+1}: Incorrect — the next span remains broken.`);shake=7;setTimeout(advanceTurn,1350)
@@ -683,6 +799,7 @@ function resolve(){
 }
 function advanceTurn(){if(finished)return;turn++;if(turn<3)renderQuestion();else finish()}
 function submitResult(score,total){
+ if(resultSent)return;resultSent=true;
  const frameName='submissionFrame';
  let frame=document.getElementById(frameName);
  if(!frame){frame=document.createElement('iframe');frame.name=frameName;frame.id=frameName;frame.style.display='none';frame.setAttribute('aria-hidden','true');document.body.appendChild(frame)}
@@ -715,7 +832,7 @@ function renderReview(){
   grid.appendChild(box)});
  host.appendChild(grid);
 }
-function finish(){finished=true;locked=true;state='idle';$('turnLabel').textContent='Expedition complete';$('questionTitle').textContent='The road remembers';$('question').textContent='All three daily trials have been resolved.';$('answers').innerHTML='';$('lockBtn').disabled=true;let n=opened.filter(Boolean).length;submitResult(n,3);$('feedback').className=n===3?'feedback good':'feedback';$('feedback').textContent=`${n} of 3 bridge sections connected. ${n===3?'Every gap is bridged; the party has reached the far road.':n===0?'The gaps remain. Return tomorrow for a new set of trials.':'Only correct answers joined their matching bridge sections.'}`;$('endTitle').textContent=n===3?'The road is yours':n===0?'The ford stands firm':'A journey remembered';$('endText').textContent=`${heroName}, you solved ${n} of today's three trials and connected ${n} bridge${n===1?'':' sections'}. Wrong answers never create a bridge. New questions rotate with the date.`;renderReview();document.documentElement.classList.add('done');$('ending').style.display='flex';if(typeof applyMode==='function')applyMode();log(`Expedition complete: ${n}/3 spans connected.`);updateUI()}
+function finish(){hideDragHint();finished=true;locked=true;state='idle';$('turnLabel').textContent='Expedition complete';$('questionTitle').textContent='The road remembers';$('question').textContent='All three daily trials have been resolved.';$('answers').innerHTML='';$('lockBtn').disabled=true;let n=opened.filter(Boolean).length;submitResult(n,3);$('feedback').className=n===3?'feedback good':'feedback';$('feedback').textContent=`${n} of 3 bridge sections connected. ${n===3?'Every gap is bridged, but the Shadow Warden carried the princess away. The chase can wait for another day.':n===0?'The gaps remain and the princess is still locked in her cage. Return tomorrow for a new set of trials.':'The princess is still locked in her cage. Only correct answers joined their matching bridge sections.'}`;$('endTitle').textContent=n===3?'The Warden escapes':n===0?'The princess still waits':'The princess is still captive';$('endText').textContent=n===3?`${heroName}, you solved all three trials, crossed every bridge and freed the princess, but the Shadow Warden snatched her away into the dark. Rest well: the chase will be waiting for you. New questions rotate with the date.`:`${heroName}, you solved ${n} of today's three trials and connected ${n} bridge${n===1?'':' sections'}, but the princess remains locked in her cage at the end of the road. Wrong answers never create a bridge. Come back tomorrow and try again to save her.`;renderReview();document.documentElement.classList.add('done');$('ending').style.display='flex';if(typeof applyMode==='function')applyMode();log(`Expedition complete: ${n}/3 spans connected.`);updateUI()}
 function start(){heroName=$('nameInput').value.trim();studentClass=$('classInput').value.trim();const ph=$('phoneInput').value.trim();
  const bad={nameInput:!heroName,classInput:!/^\d$/.test(studentClass),phoneInput:!/^\d{10}$/.test(ph)};
  const mark=id=>{const el=id==='phoneInput'?$('phoneWrap'):$(id);el.classList.remove('invalid');void el.offsetWidth;if(bad[id])el.classList.add('invalid')};
@@ -742,7 +859,7 @@ function overTarget(a,p){if(a===0)return overGap(a,p);const m=monPos(a);return M
 canvas.addEventListener('pointerdown',e=>{const a=activeLog();if(a<0)return;const p=toWorld(e);if(hitLog(a,p)){drag.held=true;drag.i=a;drag.dx=lp[a].x-p.x;drag.dy=lp[a].y-p.y;drag.x=lp[a].x;drag.y=lp[a].y;drag.over=false;canvas.setPointerCapture(e.pointerId);e.preventDefault()}});
 canvas.addEventListener('pointermove',e=>{const a=activeLog(),p=toWorld(e);if(drag.held){drag.x=p.x+drag.dx;drag.y=p.y+drag.dy;drag.over=overTarget(drag.i,{x:drag.x,y:drag.y})}else canvas.style.cursor=a>=0&&hitLog(a,p)?'grab':''});
 function release(){if(!drag.held)return;const a=drag.i;drag.held=false;
- if(drag.over&&!opened[a]){drag.over=false;opened[a]=true;genFlash[a]=.6;
+ if(drag.over&&!opened[a]){drag.over=false;opened[a]=true;genFlash[a]=.6;hideDragHint();
   if(a===0){logFly[a]=0;bridgeAnim[a]=0;bridgeVel[a]=0;landed[a]=false;toast('LOG PLACED');log(`The log is set across ${spanNames[a]}.`);updateUI();setTimeout(()=>{if(pendingCross){const f=pendingCross;pendingCross=null;f()}},1100)}
   else{sp[a]={x:lp[a].x,y:lp[a].y};logFly[a]=0;strikeT[a]=.001;toast('STRIKE!');log('The blade flies true.');updateUI()}}
  else{drag.over=false;toast(a?'DROP THE SWORD ON THE MONSTER':'DROP IT ON THE GAP')}}
