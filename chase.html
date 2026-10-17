@@ -864,15 +864,29 @@ function start(){heroName=$('nameInput').value.trim();studentClass=$('classInput
  const mark=id=>{const el=id==='phoneInput'?$('phoneWrap'):$(id);el.classList.remove('invalid');void el.offsetWidth;if(bad[id])el.classList.add('invalid')};
  Object.keys(bad).forEach(mark);
  if(bad.nameInput||bad.classInput||bad.phoneInput){toast(bad.nameInput?'ENTER YOUR NAME':bad.classInput?'ENTER A SINGLE-DIGIT CLASS':'ENTER A 10-DIGIT PHONE NUMBER');const first=Object.keys(bad).find(k=>bad[k]);$(first).focus();return}
- studentPhone='+91'+ph;prevScore=0;srcKey='manual';const music=$('backgroundMusic');lockLandscape();music.volume=0.25;music.play().catch(()=>{});beginChase()}
+ studentPhone='+91'+ph;prevScore=0;srcKey='manual';const music=$('backgroundMusic');music.volume=0.25;music.play().catch(()=>{});beginAfterFullscreen()}
 $('startBtn').addEventListener('click',start);$('lockBtn').addEventListener('click',askConfirm);$('yesBtn').addEventListener('click',()=>{hideConfirm();resolve()});$('noBtn').addEventListener('click',hideConfirm);
 function askConfirm(){if(selected.length===0||locked||!started||finished||state==='walking')return;$('lockBtn').style.display='none';$('confirmBox').style.display='flex'}
 function hideConfirm(){$('confirmBox').style.display='none';$('lockBtn').style.display=''}
 
 function isMobileDevice(){return (matchMedia('(pointer:coarse)').matches&&Math.min(screen.width,screen.height)<=600)||/Android.+Mobile|iPhone|iPod/i.test(navigator.userAgent)}
 function applyMode(){const h=document.documentElement,mob=isMobileDevice(),portrait=window.innerHeight>window.innerWidth;const on=mob&&(started||!portrait);h.classList.toggle('mob',on);h.classList.toggle('rot',on&&portrait);canvas.style.height='';resize()}
-function lockLandscape(){if(!isMobileDevice())return;const el=document.documentElement,lock=()=>screen.orientation&&screen.orientation.lock?screen.orientation.lock('landscape'):Promise.reject();
- try{const p=el.requestFullscreen?el.requestFullscreen({navigationUI:'hide'}):Promise.reject();Promise.resolve(p).then(lock).then(()=>setTimeout(applyMode,300)).catch(()=>{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{})})}catch(e){}}
+function enterFs(){const el=document.documentElement,mob=isMobileDevice();
+ return new Promise(res=>{try{const p=el.requestFullscreen?el.requestFullscreen({navigationUI:'hide'}):Promise.reject();
+  Promise.resolve(p).then(()=>{if(mob&&screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});setTimeout(()=>{applyMode();res(true)},450)}).catch(()=>res(false))}catch(e){res(false)}})}
+/* fullscreen first, THEN the hero runs in. If the browser blocks fullscreen (no recent click), wait for one tap. */
+function beginAfterFullscreen(){const el=document.documentElement;
+ if(document.fullscreenElement||!el.requestFullscreen){beginChase();return}
+ enterFs().then(ok=>{if(ok){beginChase();return}
+  const g=document.createElement('button');g.textContent='Tap to enter fullscreen';
+  g.style.cssText='position:fixed;inset:0;z-index:9998;border:0;background:#060a10;color:#bfe6fa;font:600 16px Cinzel,serif;letter-spacing:3px;text-transform:uppercase';
+  document.body.appendChild(g);
+  g.addEventListener('click',()=>{enterFs().then(()=>{g.remove();beginChase()})},{once:true})})}
+function goFullscreen(){if(document.fullscreenElement)return;const el=document.documentElement,mob=isMobileDevice();
+ const lock=()=>{if(mob&&screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});setTimeout(applyMode,300)};
+ const retry=()=>{removeEventListener('pointerdown',retry);removeEventListener('keydown',retry);goFullscreen()};
+ const arm=()=>{addEventListener('pointerdown',retry,{once:true});addEventListener('keydown',retry,{once:true})};
+ try{const p=el.requestFullscreen?el.requestFullscreen({navigationUI:'hide'}):Promise.reject();Promise.resolve(p).then(lock).catch(arm)}catch(e){arm()}}
 window.addEventListener('resize',applyMode);window.addEventListener('orientationchange',()=>setTimeout(applyMode,250));
 canvas.style.touchAction='none';
 function toWorld(e){const r=canvas.getBoundingClientRect(),rot=document.documentElement.classList.contains('rot'),Wl=canvas.clientWidth,Hl=canvas.clientHeight;let u,v;
@@ -896,8 +910,8 @@ const handedKey=handed&&handed.name?JSON.stringify([handed.name,handed.class,han
 const fade=document.getElementById('pageFade');
 function revealPage(){requestAnimationFrame(()=>requestAnimationFrame(()=>{fade.classList.add('gone');setTimeout(()=>fade.remove(),1400)}))}
 function playMusic(){const m=document.getElementById('backgroundMusic');m.volume=0.25;m.play().catch(()=>{const once=()=>{m.play().catch(()=>{});removeEventListener('pointerdown',once)};addEventListener('pointerdown',once)})}
-if(saved&&saved.date===dateKey&&(!handedKey||saved.src===handedKey)){playMusic();restoreState(saved)}
-else if(handedKey){heroName=handed.name;studentClass=handed.class||'';studentPhone=handed.phone||'';prevScore=Math.max(0,Math.min(3,+handed.score||0));srcKey=handedKey;playMusic();beginChase()}
+if(saved&&saved.date===dateKey&&(!handedKey||saved.src===handedKey)){playMusic();restoreState(saved);goFullscreen()}
+else if(handedKey){heroName=handed.name;studentClass=handed.class||'';studentPhone=handed.phone||'';prevScore=Math.max(0,Math.min(3,+handed.score||0));srcKey=handedKey;playMusic();beginAfterFullscreen()}
 requestAnimationFrame(frame);revealPage();
 })();
 
